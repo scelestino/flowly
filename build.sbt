@@ -7,5 +7,8 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "flowly-core",
-    libraryDependencies += scalaTest % Test
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest"      % "3.0.5",
+      "org.json4s"    %% "json4s-native"  % "3.6.0"
+    )
   )
