@@ -1,6 +1,8 @@
 package flowly
+import org.json4s.JValue
+import org.json4s.JsonAST.JString
+import org.json4s.scalaz.JsonScalaz
 
-import scala.collection.immutable.Stream.cons
 
 
 trait Task {
@@ -41,6 +43,17 @@ trait DisjunctionTask extends Task {
 
 }
 
+trait FinishTask extends Task {
+
+  def path(ctx:ExecutionContext): Stream[Task] = Stream(this)
+
+  def perform(ctx: ExecutionContext): Result = {
+    println(s"FINISH! $id")
+    Finish()
+  }
+
+}
+
 trait BlockingTask extends BaseTask {
 
   def condition(ctx:ExecutionContext):Boolean
@@ -67,21 +80,6 @@ trait ExecutionTask extends BaseTask {
   object ExecutionError extends ExecutionResult
 
 }
-
-trait FinishTask extends Task {
-
-  def path(ctx:ExecutionContext): Stream[Task] = Stream(this)
-
-  def perform(ctx: ExecutionContext): Result = {
-    println(s"FINISH! $id")
-    Finish()
-  }
-
-}
-
-
-
-case class ExecutionContext(sessionId:String)
 
 
 
@@ -143,33 +141,48 @@ object Main extends App {
 
   }
 
-  val ctx = ExecutionContext("BBB")
-
-  def execute(task:Task, ctx:ExecutionContext) = {
-    first.path(ctx).map { task =>
-      task.perform(ctx)
-    }.find(!_.shouldContinue)
+  val workflow = new Workflow {
+    def name: String = "nombre"
+    def version: String = "v1"
+    def firstTask: Task = first
   }
 
-  val result = execute(first, ctx)
+  val ctx = new ExecutionContext("BBB", Map.empty)
+
+  val result = workflow.execute(ctx)
 
   println(result)
 
+}
 
+object Main2 extends App {
 
+  import org.json4s.scalaz.JsonScalaz._
+  import scalaz._
+  import Scalaz._
 
-  implicit class RichStream[A](stream: Stream[A]) {
+  case class Person(name:String)
 
-    /**
-      * Similar to takeWhile but it includes the first element that doesn't satisfy the condition
-      */
-    def takeUntilNot(p: A => Boolean): Stream[A] =
-      if(stream.isEmpty) Stream.Empty
-      else if(p(stream.head)) cons(stream.head, stream.tail takeUntilNot p)
-      else cons(stream.head, Stream.Empty)
+  object Person {
+
+    implicit val json:JSON[Person] = new JSON[Person] {
+      def write(value: Person): JValue = JString("putos")
+      def read(json: JValue): JsonScalaz.Result[Person] = Person("vamo lo pibe").successNel
+    }
 
   }
 
 
-}
 
+  private val value: JValue = toJSON(Person("pepito"))
+
+  println(value)
+
+
+  private val value2: JsonScalaz.Result[Person] = fromJSON[Person](value)
+
+  println(value2)
+
+
+
+}
