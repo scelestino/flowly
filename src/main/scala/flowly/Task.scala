@@ -1,6 +1,7 @@
 package flowly
 
-import org.json4s.JValue
+import flowly.context._
+import org.json4s.{CustomSerializer, JValue}
 import org.json4s.JsonAST.JString
 import org.json4s.scalaz.JsonScalaz
 
@@ -122,12 +123,12 @@ object Main extends App {
   }
 
   trait BlockingComponent {
-    this: ConditionalComponent =>
+    this: Finish1Component =>
     val blocking:Task = new BlockingTask {
 
       def condition(ctx: ReadableExecutionContext): Boolean = true
 
-      def next: Task = conditional
+      def next: Task = finish
 
       def id: String = "BLOCKING!"
 
@@ -144,6 +145,7 @@ object Main extends App {
 
       def execute(ctx: WriteableExecutionContext): ExecutionResult = {
         println("executing 2")
+        println(ctx.get(Key1))
         ExecutionOk
       }
 
@@ -154,7 +156,7 @@ object Main extends App {
     this: Finish2Component with SecondComponent =>
     val conditional:Task = new DisjunctionTask {
 
-      def branches: List[(ReadableExecutionContext => Boolean, Task)] = ((ctx: ReadableExecutionContext) => ctx.sessionId == "BBB", finish2) :: ((ctx: ReadableExecutionContext) => true, second) :: Nil
+      def branches: List[(ReadableExecutionContext => Boolean, Task)] = ((ctx: ReadableExecutionContext) => ctx.sessionId == "AAA", finish2) :: ((ctx: ReadableExecutionContext) => true, second) :: Nil
 
       def id: String = "disjunction"
 
@@ -181,78 +183,73 @@ object Main extends App {
 
   val workflow = new Workflow {
     def name: String = "nombre"
-
     def version: String = "v1"
-
     def firstTask: Task = Components.first
   }
 
   val ctx = new ExecutionContext("BBB", Map.empty)
 
-  val result = workflow.execute(ctx)
+
+  val result = workflow.execute(ctx.set(Key1, "asdad"))
 
   println(result)
-
 
   println(Components.first.tasks)
 
 }
 
+case object Key1 extends Key[String]
+case object Key2 extends Key[Int]
+
+
 object Main2 extends App {
 
-  import org.json4s.scalaz.JsonScalaz._
-  import scalaz._
-  import Scalaz._
+  import org.json4s.native.JsonMethods._
+  import org.json4s.native.Serialization.{read, write}
 
-  case class Person(name: String)
-
-  object Person {
-
-    implicit val json: JSON[Person] = new JSON[Person] {
-      def write(value: Person): JValue = JString("putos")
-
-      def read(json: JValue): JsonScalaz.Result[Person] = Person("vamo lo pibe").successNel
-    }
-
-  }
+  implicit val format = org.json4s.DefaultFormats
 
 
-  private val value: JValue = toJSON(Person("pepito"))
-
-  println(value)
+  val ctx = new ExecutionContext("1", Map.empty).set(Key1, "hola").set(Key2, 123)
 
 
-  private val value2: JsonScalaz.Result[Person] = fromJSON[Person](value)
+  val r = write(ctx.variables)
 
-  println(value2)
 
+//  val r = variables.get(Key1)
+
+  println(r)
 
 }
 
+//object Main2 extends App {
+//
+//  import org.json4s.scalaz.JsonScalaz._
+//  import scalaz._
+//  import Scalaz._
+//
+//  case class Person(name: String)
+//
+//  object Person {
+//
+//    implicit val json: JSON[Person] = new JSON[Person] {
+//      def write(value: Person): JValue = JString("putos")
+//
+//      def read(json: JValue): JsonScalaz.Result[Person] = Person("vamo lo pibe").successNel
+//    }
+//
+//  }
+//
+//
+//  private val value: JValue = toJSON(Person("pepito"))
+//
+//  println(value)
+//
+//
+//  private val value2: JsonScalaz.Result[Person] = fromJSON[Person](value)
+//
+//  println(value2)
+//
+//
+//}
 
-object Main3 extends App {
-
-  trait Key[T]
-
-  object HolaKey extends Key[String]
-  object NumeroKey extends Key[Int]
-
-
-  val map = Map[Key[_], Any](HolaKey -> "asdad", NumeroKey -> 5)
-
-
-
-  def get[T](key:Key[T]):T = map.get(key).asInstanceOf[T]
-
-  def set[T](key:Key[T], value:T) = ???
-
-
-  println(get(HolaKey))
-
-  println(get(NumeroKey))
-
-
-
-
-
-}

@@ -1,5 +1,7 @@
 package flowly
 
+import flowly.context.ExecutionContext
+
 trait Workflow {
 
   def name:String
