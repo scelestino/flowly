@@ -1,6 +1,7 @@
 package flowly
 
 import flowly.context.ExecutionContext
+import flowly.task.Task
 
 trait Workflow {
 
@@ -9,10 +10,15 @@ trait Workflow {
 
   def firstTask:Task
 
-  def execute(ctx:ExecutionContext) = {
-    firstTask.path(ctx).map { task =>
-      task.perform(ctx)
-    }.find(!_.shouldContinue)
+  def execute(ctx:ExecutionContext):TaskResult = {
+    def execute(task:Task, ctx:ExecutionContext):TaskResult = {
+      println(s"Executing... ${task.id}")
+      task.execute(ctx) match {
+        case Continue(_, next, updatedCtx) => execute(next, updatedCtx)
+        case otherwise                     => otherwise
+      }
+    }
+    execute(firstTask, ctx)
   }
 
 }
