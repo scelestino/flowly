@@ -1,4 +1,4 @@
-package flowly.task
+package flowly.tasks
 
 import flowly.context.ExecutionContext
 import flowly.{Continue, Error, TaskResult}
@@ -7,7 +7,11 @@ sealed trait PerformResult
 case class PerformOk(ctx: ExecutionContext) extends PerformResult
 case class PerformError(msg: String) extends PerformResult
 
-trait ExecutionTask extends SimpleTask {
+/**
+  * An instance of this [[Task]] will execute your code and can change the execution context.
+  *
+  */
+trait ExecutionTask extends SingleTask {
 
   def execute(ctx: ExecutionContext): TaskResult = try {
     perform(ctx) match {

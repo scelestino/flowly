@@ -1,7 +1,7 @@
 package flowly
 
 import flowly.context.ExecutionContext
-import flowly.task.Task
+import flowly.tasks.Task
 
 trait TaskResult {
   def taskId:String
@@ -9,7 +9,7 @@ trait TaskResult {
 }
 
 case class Continue(taskId:String, nextTask:Task, ctx: ExecutionContext) extends TaskResult {
-  def status:String = WFStatus.OK
+  def status:String = WFStatus.ERROR
 }
 
 case class Finish(taskId:String) extends TaskResult {

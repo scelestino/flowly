@@ -1,6 +1,6 @@
 package flowly.context
 
-import flowly.task.{BlockingTask, DisjunctionTask, ExecutionTask}
+import flowly.tasks.{BlockingTask, DisjunctionTask, ExecutionTask}
 
 /**
   * Interface used by [[BlockingTask]] and [[DisjunctionTask]]

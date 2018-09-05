@@ -1,8 +1,14 @@
-package flowly.task
+package flowly.tasks
 
 import flowly.context.{ExecutionContext, ReadableExecutionContext}
 import flowly.{Error, Continue, TaskResult}
 
+/**
+  * An instance of this [[Task]] will choose a branch of execution between different paths based on given conditions.
+  *
+  * It will test each condition until find any that works. If no condition works, this [[Task]] will fail.
+  *
+  */
 trait DisjunctionTask extends Task {
 
   def branches: Seq[(ReadableExecutionContext => Boolean, Task)]
@@ -25,6 +31,10 @@ object DisjunctionTask {
   def apply(_id:String, _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
     def id: String = _id
     def branches: Seq[(ReadableExecutionContext => Boolean, Task)] = _branches
+  }
+
+  def apply(_id:String, ifTrue:Task, ifFalse:Task, condition: ReadableExecutionContext => Boolean): DisjunctionTask = {
+    apply(_id, (condition, ifTrue), (_ => true, ifFalse) )
   }
 
 }

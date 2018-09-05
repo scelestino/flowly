@@ -1,9 +1,15 @@
-package flowly.task
+package flowly.tasks
 
 import flowly.context.{ExecutionContext, ReadableExecutionContext}
 import flowly.{Blocked, Continue, TaskResult}
 
-trait BlockingTask extends SimpleTask {
+/**
+  * An instance of this [[Task]] could block the execution if a given condition fails.
+  *
+  * Conditions can be setted throught the execution context.
+  *
+  */
+trait BlockingTask extends SingleTask {
 
   def condition(ctx:ReadableExecutionContext): Boolean
 

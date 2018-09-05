@@ -14,7 +14,7 @@ package flowly.context
   *
   * }}}
   *
-  * @tparam T what kind of objects can be used with this key
+  * @tparam T what kind of object can be used with this key
   */
 trait Key[T] {
   this: Product =>

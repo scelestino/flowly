@@ -1,7 +1,7 @@
 package flowly
 
 import flowly.context.{ExecutionContext, Key}
-import flowly.task._
+import flowly.tasks._
 
 object Main extends App {
 
@@ -28,7 +28,7 @@ object Main extends App {
 
   trait DisjunctionComponent {
     this: Finish2Component with SecondComponent =>
-    lazy val disjunction: Task = DisjunctionTask("Disjunction", (_.sessionId == "AAA", finish2), (_ => true, second))
+    lazy val disjunction: Task = DisjunctionTask("Disjunction", finish2, second, _.sessionId == "AAA")
   }
 
   trait FirstComponent {
@@ -60,7 +60,6 @@ object Main extends App {
 }
 
 case object Key1 extends Key[String]
-
 case object Key2 extends Key[Int]
 
 

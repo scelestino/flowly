@@ -1,10 +1,13 @@
-package flowly.task
+package flowly.tasks
 
 import flowly._
 import flowly.context._
 
 /**
   * [[Task]] is something to do inside a workflow
+  *
+  * There is no possible to use two identical [[Task]] in the same workflow
+  *
   */
 trait Task {
 
