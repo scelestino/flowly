@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-package flowly.context
+package flowly
 
-/**
-  * Interface used to get access to objects inside an [[ExecutionContext]], it creates a relation
-  * between an identifier and a type.
-  *
-  * {{{
-  *
-  *   case object Key1 extends Key[String]
-  *   case object Key2 extends Key[Int]
-  *   case object Key3 extends Key[List[Foo]]
-  *
-  *   val ctx = new ExecutionContext("bar", Map.empty).set(Key2, 123)
-  *
-  * }}}
-  *
-  * @tparam A what kind of object can be used with this key
-  */
-trait Key[A] {
-  this: Product =>
-  def identifier:String = this.toString
+import flowly.context.Key
+
+class Param private (underlying:(String, Any)) {
+  def value:(String, Any) = underlying
+}
+
+object Param {
+  def apply[T](key: Key[T], value: T):Param = new Param(key.identifier, value)
 }

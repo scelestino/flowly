@@ -1,3 +1,19 @@
+/*
+ * Copyright © 2018-2019 the flowly project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package flowly
 
 import flowly.context.{ExecutionContext, Key}
@@ -22,7 +38,7 @@ object Main extends App {
     this: BlockingComponent =>
     lazy val second = ExecutionTask("EXECUTING 2", blocking) { ctx =>
       println(ctx.get(Key1))
-      PerformOk(ctx)
+      Right(ctx.set(Key2, 1234))
     }
   }
 
@@ -34,33 +50,29 @@ object Main extends App {
   trait FirstComponent {
     this: DisjunctionComponent =>
     lazy val first: Task = ExecutionTask("EXECUTING 1", disjunction) { ctx =>
-      PerformOk(ctx.set(Key1, "hello world"))
+      Right(ctx.set(Key1, "foo bar baz"))
     }
   }
 
   object Components extends FirstComponent with SecondComponent with DisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component
 
   val workflow = new Workflow {
-    def name: String = "nombre"
-
-    def version: String = "v1"
-
-    def firstTask: Task = Components.first
+    def initialTask: Task = Components.first
   }
 
-  val ctx = new ExecutionContext("BBB", Map.empty)
-
-
-  val result = workflow.execute(ctx.set(Key1, "asdad"))
+  val result = workflow.execute("1", Param(Key3, false))
 
   println(result)
 
-  println(Components.first.tasks)
+  println(workflow.tasks)
+
+  println(workflow.variables("1"))
 
 }
 
 case object Key1 extends Key[String]
 case object Key2 extends Key[Int]
+case object Key3 extends Key[Boolean]
 
 
 object Main2 extends App {
@@ -71,7 +83,6 @@ object Main2 extends App {
 
 
   val ctx = new ExecutionContext("1", Map.empty).set(Key1, "hola").set(Key2, 123)
-
 
   val r = write(ctx.variables)
 
