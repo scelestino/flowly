@@ -24,10 +24,8 @@ import flowly.context.ExecutionContext
   */
 trait ExecutionTask extends SingleTask {
 
-  def execute(ctx: ExecutionContext): TaskResult = try {
-    perform(ctx).fold(Error(id, _), Continue(id, next, _))
-  } catch {
-    case e: Throwable => Error(id, e.getMessage)
+  def execute(ctx: ExecutionContext): TaskResult = {
+    perform(ctx).fold(OnError(id, _), Continue(id, next, _))
   }
 
   protected def perform(ctx: ExecutionContext): ExecutionTaskResult
@@ -38,11 +36,11 @@ object ExecutionTask {
 
   def apply(_id: String, _next: Task)(_perform: ExecutionContext => ExecutionTaskResult): ExecutionTask = new ExecutionTask {
     def id: String = _id
-
     def next: Task = _next
-
     def perform(ctx: ExecutionContext): ExecutionTaskResult = _perform(ctx)
   }
 
 }
 
+
+// TODO: an execution task could cancel a workflow?????

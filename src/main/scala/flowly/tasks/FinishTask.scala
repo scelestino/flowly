@@ -29,7 +29,7 @@ import flowly.context.ExecutionContext
   */
 case class FinishTask(id:String) extends Task {
 
-  def execute(ctx: ExecutionContext): TaskResult = Finish(id)
+  def execute(ctx: ExecutionContext): TaskResult = Finished(id)
 
   def followedBy: List[Task] = Nil
 

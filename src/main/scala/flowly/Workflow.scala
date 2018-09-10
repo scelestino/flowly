@@ -16,8 +16,9 @@
 
 package flowly
 
-import flowly.context.{ExecutionContext, Key}
-import flowly.tasks.{Continue, Task, TaskResult}
+import flowly.context.ExecutionContext
+import flowly.session.Session
+import flowly.tasks._
 
 
 trait Workflow {
@@ -27,47 +28,91 @@ trait Workflow {
   // temp
   val repository = new Repository
 
-  def execute(sessionId: String, params:Param*): TaskResult = {
+  def init(params: Param*): ErrorOr[String] = {
+    repository.createSession(params.map(_.value).toMap)
+  }
 
-    val session = repository.getSession(sessionId).get // check opt or change to either
+  def execute(sessionId: String, params: Param*): ErrorOr[TaskResult] = {
 
-    // can be resumed?
+    for {
 
-    val taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
+      session <- repository.getSession(sessionId)
 
-    val task = tasks.find(_.id == taskId).get // check opt or change to either
+      // can be resumed?
 
-    val newVariables = params.map(_.value).toMap
+      taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
 
-    def execute(task: Task, ctx: ExecutionContext): TaskResult = {
+      task <- lookup(taskId)
 
-      // save session runnning
+      newVariables = params.map(_.value).toMap
 
-      // try catch??
-      task.execute(ctx) match {
+      result <- execute(task, ExecutionContext(sessionId, session.variables ++ newVariables), session)
 
-        case Continue(_, next, updatedCtx) => {
+    } yield result
 
-          // log?
-          println(s"${task.id} finished")
+  }
 
-          // save session?
-          repository.saveSession(session.copy(variables = updatedCtx.variables))
+  private def execute(task: Task, ctx: ExecutionContext, session: Session): ErrorOr[TaskResult] = {
 
-          // execute next
-          execute(next, updatedCtx)
+    // save session runnning
 
-        }
+    // try catch??
+    task.execute(ctx) match {
 
-        case otherwise => /* log and save? */ otherwise
+      case Continue(taskId, next, updatedCtx) =>
 
-      }
+        // log?
+        println(s"$taskId finished, continue")
+
+        // save session?
+        repository.saveSession(session.copy(variables = updatedCtx.variables))
+
+        // execute next
+        execute(next, updatedCtx, session)
+
+      case result@Blocked(taskId) =>
+
+        // log?
+        println(s"$taskId finished, blocked")
+
+        repository.saveSession(session.blocked(task)).map(_ => result)
+
+      case result@Finished(taskId) =>
+
+        // log?
+        println(s"$taskId finished, finished")
+
+        repository.saveSession(session.finished(task)).map(_ => result)
+
+      case result@OnError(taskId, msg) =>
+
+        // log?
+        println(s"$taskId finished, on error")
+
+        repository.saveSession(session.onError(task)).map(_ => result)
 
     }
 
-    execute(task, ExecutionContext(sessionId, session.variables ++ newVariables))
-
   }
+
+  /**
+    * Cancel an instance of Workflow, it can't be executed again
+    *
+    * @param sessionId session id
+    * @return session id
+    */
+  def cancel(sessionId:String):ErrorOr[String] = {
+
+    for {
+
+      session <- repository.getSession(sessionId)
+
+      result <- repository.saveSession(session.cancelled())
+
+    } yield result
+
+  }.map(_.id)
+
 
   /**
     * It returns a list of every [[Task]] in this workflow
@@ -77,15 +122,15 @@ trait Workflow {
   def tasks: List[Task] = {
     def tasks(currentTask: Task, accum: List[Task]): List[Task] = {
       if (accum.contains(currentTask)) accum
-      else currentTask.followedBy.foldLeft(currentTask :: accum) {
-        (seed, task) => tasks(task, seed)
-      }
+      else currentTask.followedBy.foldRight(currentTask :: accum)(tasks)
     }
 
     tasks(initialTask, Nil)
   }
 
+  def lookup(taskId: String): ErrorOr[Task] = tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
+
   // draft
-  def variables(sessionId:String):Map[String, Any] = repository.getSession(sessionId).map(_.variables).getOrElse(Map.empty)
+  def variables(sessionId: String): Map[String, Any] = repository.getSession(sessionId).map(_.variables).getOrElse(Map.empty)
 
 }

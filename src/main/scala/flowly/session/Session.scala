@@ -18,6 +18,34 @@ package flowly.session
 
 import java.time.LocalDateTime
 
-case class Session(id: String, lastExecution: Option[Execution], variables: Map[String, Any], createdAt: LocalDateTime)
+import flowly.WFStatus
+import flowly.WFStatus.WFStatus
+import flowly.tasks.Task
 
-case class Execution(taskId: String, status: String, at: LocalDateTime, msg: Option[String] = None)
+case class Session(id: String, lastExecution: Option[Execution], variables: Map[String, Any], createdAt: LocalDateTime, status:String) {
+
+  def running(task:Task):Session = changeStatus(task, WFStatus.RUNNING)
+
+  def blocked(task:Task):Session = changeStatus(task, WFStatus.BLOCKED)
+
+  def finished(task:Task):Session = changeStatus(task, WFStatus.FINISHED)
+
+  def onError(task:Task):Session = changeStatus(task, WFStatus.ERROR)
+
+  def cancelled():Session = copy(status = WFStatus.CANCELLED)
+
+  private def changeStatus(task:Task, status:WFStatus):Session = {
+    copy(lastExecution = Option(Execution(task.id, LocalDateTime.now)), status = status)
+  }
+
+}
+
+object Session {
+
+  def apply(id: String, variables: Map[String, Any]): Session = {
+    new Session(id, None, variables, LocalDateTime.now, WFStatus.CREATED)
+  }
+
+}
+
+case class Execution(taskId: String, at: LocalDateTime)

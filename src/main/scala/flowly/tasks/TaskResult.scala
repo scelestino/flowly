@@ -39,7 +39,7 @@ case class Continue(taskId:String, nextTask:Task, ctx: ExecutionContext) extends
   *
   * @param taskId task id
   */
-case class Finish(taskId:String) extends TaskResult
+case class Finished(taskId:String) extends TaskResult
 
 /**
   * Current workflow execution cannot continue because a condition is not met
@@ -54,4 +54,4 @@ case class Blocked(taskId:String) extends TaskResult
   * @param taskId task id
   * @param msg error message
   */
-case class Error(taskId:String, msg:String) extends TaskResult
+case class OnError(taskId:String, msg:String) extends TaskResult

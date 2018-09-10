@@ -16,20 +16,31 @@
 
 package flowly
 
-import flowly.session.Session
 import java.time.LocalDateTime
+import java.util.UUID
+
+import flowly.session.Session
 
 import scala.collection.mutable
 
 // dummy repo
 class Repository {
 
-  private val storage = mutable.Map[String, Session]("1" -> Session("1", None, Map.empty, LocalDateTime.now))
+  private val storage:mutable.Map[String, Session] = mutable.Map[String, Session]()
 
-  def getSession(sessionId:String):Option[Session] = storage.get(sessionId)
+  def createSession(initialVariables:Map[String, Any]):ErrorOr[String] = {
+    val id = UUID.randomUUID().toString
+    saveSession(Session(id, initialVariables))
+    Right(id)
+  }
 
-  def saveSession(session: Session):Unit = {
+  def getSession(sessionId:String):ErrorOr[Session] = {
+    storage.get(sessionId).toRight(new RepositoryError("session not found", null))
+  }
+
+  def saveSession(session: Session):ErrorOr[Session] = {
     storage.update(session.id, session)
+    Right(session)
   }
 
 }

@@ -31,7 +31,7 @@ trait DisjunctionTask extends Task {
   def execute(ctx: ExecutionContext): TaskResult = {
     next(ctx) match {
       case Some(next) => Continue(id, next, ctx)
-      case None => Error(id, "DisjunctionTask is not exhaustive!")
+      case None => OnError(id, "DisjunctionTask is not exhaustive!")
     }
   }
 

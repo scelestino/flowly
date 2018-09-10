@@ -31,7 +31,7 @@ object Main extends App {
 
   trait BlockingComponent {
     this: Finish1Component =>
-    lazy val blocking = BlockingTask("BLOCKING", finish, _ => true)
+    lazy val blocking = BlockingTask("BLOCKING", finish, _.contains(Key3))
   }
 
   trait SecondComponent {
@@ -60,13 +60,18 @@ object Main extends App {
     def initialTask: Task = Components.first
   }
 
-  val result = workflow.execute("1", Param(Key3, false))
+
+  val result = for {
+
+    sessionId <- workflow.init()
+
+    result <- workflow.execute(sessionId/*, Param(Key3, false)*/)
+
+  } yield result
+
 
   println(result)
 
-  println(workflow.tasks)
-
-  println(workflow.variables("1"))
 
 }
 
@@ -91,8 +96,74 @@ object Main2 extends App {
 
   println(r)
 
-}
 
+  trait Animal {
+    def stop():Unit = println("stop moving")
+  }
+
+  class Dog extends Animal {
+    def bark:String = "Woof!"
+  }
+
+  trait Security {
+    this: Animal =>
+    def lookout:Unit = { stop(); println("looking out!") }
+  }
+
+  val goodboy:Dog = new Dog
+
+  goodboy.bark
+  // Woof!
+
+
+  val guardDog = new Dog with Security
+  guardDog.lookout
+
+
+
+  trait Patient {
+    this: Reader =>
+    def isQuite:Boolean = isReading
+    def isSlow:Boolean = true
+  }
+
+  trait Reader {
+    this: Patient =>
+    def read():Unit = if(isSlow) println("Reading Slow...") else println("Reading Fast...")
+    def isReading = true
+  }
+
+  val person = new Patient with Reader
+
+
+
+  trait Human {
+    def isGoodForSports:Boolean
+  }
+
+  trait Programmer extends Human {
+    def readStackOverflow():Unit = println("Reading...")
+    override def isGoodForSports: Boolean = false
+  }
+
+  trait Sportsman extends Human {
+    def play():Unit = println("Playing something")
+    override def isGoodForSports: Boolean = true
+  }
+
+  val foo = new Programmer with Sportsman
+  println(foo.isGoodForSports)
+
+  val bar = new Sportsman with Programmer
+  println(bar.isGoodForSports)
+
+
+
+
+
+
+
+}
 
 //object Main2 extends App {
 //
