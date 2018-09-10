@@ -17,8 +17,11 @@
 package flowly
 
 
-case class TaskNotFound(taskId:String) extends Throwable
+case class TaskNotFound(taskId: String) extends Throwable
 
-class RepositoryError(msg:String, cause:Throwable) extends Exception(msg, cause)
+case class SessionNotFound(sessionId:String) extends Throwable
+case class SessionCantBeExecuted(sessionId: String) extends Throwable
+
+case class DisjunctionTaskError() extends Throwable
 
 

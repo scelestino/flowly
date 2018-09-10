@@ -14,27 +14,33 @@
  * limitations under the License.
  */
 
-package flowly.session
+package flowly.repository.model
 
 import java.time.LocalDateTime
 
-import flowly.WFStatus
-import flowly.WFStatus.WFStatus
+import flowly.repository.model.WFStatus.WFStatus
 import flowly.tasks.Task
 
-case class Session(id: String, lastExecution: Option[Execution], variables: Map[String, Any], createdAt: LocalDateTime, status:String) {
+case class Session private(id: String, lastExecution: Option[Execution], variables: Map[String, Any], createdAt: LocalDateTime, status: String) {
 
-  def running(task:Task):Session = changeStatus(task, WFStatus.RUNNING)
+  def update(variables: Map[String, Any]): Session = copy(variables = variables)
 
-  def blocked(task:Task):Session = changeStatus(task, WFStatus.BLOCKED)
+  def running(task: Task): Session = changeStatus(task, WFStatus.RUNNING)
 
-  def finished(task:Task):Session = changeStatus(task, WFStatus.FINISHED)
+  def blocked(task: Task): Session = changeStatus(task, WFStatus.BLOCKED)
 
-  def onError(task:Task):Session = changeStatus(task, WFStatus.ERROR)
+  def finished(task: Task): Session = changeStatus(task, WFStatus.FINISHED)
 
-  def cancelled():Session = copy(status = WFStatus.CANCELLED)
+  def onError(task: Task): Session = changeStatus(task, WFStatus.ERROR)
 
-  private def changeStatus(task:Task, status:WFStatus):Session = {
+  def cancelled(): Session = copy(status = WFStatus.CANCELLED)
+
+  def isExecutable: Boolean = WFStatus.withName(status) match {
+    case WFStatus.RUNNING | WFStatus.FINISHED | WFStatus.CANCELLED => false
+    case _ => true
+  }
+
+  private def changeStatus(task: Task, status: WFStatus): Session = {
     copy(lastExecution = Option(Execution(task.id, LocalDateTime.now)), status = status)
   }
 

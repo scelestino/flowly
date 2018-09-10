@@ -16,12 +16,22 @@
 
 package flowly
 
-import flowly.context.Key
+import flowly.tasks.context.Key
 
-class Param private (underlying:(String, Any)) {
-  def value:(String, Any) = underlying
+/**
+  * Object used to ensure the relationship between keys and values at variable arguments methods
+  *
+  * @param underlying a pair key -> value
+  */
+class Param private(underlying: (String, Any)) {
+  def value: (String, Any) = underlying
 }
 
 object Param {
-  def apply[T](key: Key[T], value: T):Param = new Param(key.identifier, value)
+  def apply[A](key: Key[A], value: A): Param = new Param(key.identifier, value)
+
+  implicit class ParamSeqOps(params: Seq[Param]) {
+    def toVariables: Map[String, Any] = params.map(_.value).toMap
+  }
+
 }

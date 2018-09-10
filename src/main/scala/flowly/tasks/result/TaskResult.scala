@@ -14,44 +14,45 @@
  * limitations under the License.
  */
 
-package flowly.tasks
+package flowly.tasks.result
 
-import flowly.context.ExecutionContext
+import flowly.tasks.Task
+import flowly.tasks.context.TaskContext
 
 /**
   * Interface of a [[Task]] execution result
   */
 trait TaskResult {
-  def taskId:String
+  def taskId: String
 }
 
 /**
   * Current workflow execution must be continued
   *
-  * @param taskId task id
+  * @param taskId   task id
   * @param nextTask next task to be executed
-  * @param ctx current execution context
+  * @param ctx      current execution context
   */
-case class Continue(taskId:String, nextTask:Task, ctx: ExecutionContext) extends TaskResult
+case class Continue(taskId: String, nextTask: Task, ctx: TaskContext) extends TaskResult
 
 /**
   * Current workflow execution has finished
   *
   * @param taskId task id
   */
-case class Finished(taskId:String) extends TaskResult
+case class Finished(taskId: String) extends TaskResult
 
 /**
   * Current workflow execution cannot continue because a condition is not met
   *
   * @param taskId task id
   */
-case class Blocked(taskId:String) extends TaskResult
+case class Blocked(taskId: String) extends TaskResult
 
 /**
   * There was an unexpected error during current workflow execution
   *
-  * @param taskId task id
-  * @param msg error message
+  * @param taskId    task id
+  * @param throwable error
   */
-case class OnError(taskId:String, msg:String) extends TaskResult
+case class OnError(taskId: String, throwable: Throwable) extends TaskResult

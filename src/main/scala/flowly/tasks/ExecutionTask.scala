@@ -16,7 +16,9 @@
 
 package flowly.tasks
 
-import flowly.context.ExecutionContext
+import flowly.ErrorOr
+import flowly.tasks.context.TaskContext
+import flowly.tasks.result.{Continue, OnError, TaskResult}
 
 /**
   * An instance of this [[Task]] will execute your code and can change the execution context.
@@ -24,20 +26,24 @@ import flowly.context.ExecutionContext
   */
 trait ExecutionTask extends SingleTask {
 
-  def execute(ctx: ExecutionContext): TaskResult = {
+  def execute(ctx: TaskContext): TaskResult = try {
     perform(ctx).fold(OnError(id, _), Continue(id, next, _))
+  } catch {
+    case throwable: Throwable => OnError(id, throwable)
   }
 
-  protected def perform(ctx: ExecutionContext): ExecutionTaskResult
+  protected def perform(ctx: TaskContext): ErrorOr[TaskContext]
 
 }
 
 object ExecutionTask {
 
-  def apply(_id: String, _next: Task)(_perform: ExecutionContext => ExecutionTaskResult): ExecutionTask = new ExecutionTask {
+  def apply(_id: String, _next: Task)(_perform: TaskContext => ErrorOr[TaskContext]): ExecutionTask = new ExecutionTask {
     def id: String = _id
+
     def next: Task = _next
-    def perform(ctx: ExecutionContext): ExecutionTaskResult = _perform(ctx)
+
+    def perform(ctx: TaskContext): ErrorOr[TaskContext] = _perform(ctx)
   }
 
 }

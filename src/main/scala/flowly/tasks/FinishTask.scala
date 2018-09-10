@@ -16,7 +16,8 @@
 
 package flowly.tasks
 
-import flowly.context.ExecutionContext
+import flowly.tasks.context.TaskContext
+import flowly.tasks.result.{Finished, TaskResult}
 
 /**
   * An instance of this [[Task]] is need be to used to finish a workflow execution.
@@ -27,9 +28,9 @@ import flowly.context.ExecutionContext
   *
   * @param id task id
   */
-case class FinishTask(id:String) extends Task {
+case class FinishTask(id: String) extends Task {
 
-  def execute(ctx: ExecutionContext): TaskResult = Finished(id)
+  def execute(ctx: TaskContext): TaskResult = Finished(id)
 
   def followedBy: List[Task] = Nil
 

@@ -16,8 +16,8 @@
 
 package flowly
 
-import flowly.context.{ExecutionContext, Key}
 import flowly.tasks._
+import flowly.tasks.context.Key
 
 object Main extends App {
 
@@ -36,7 +36,7 @@ object Main extends App {
 
   trait SecondComponent {
     this: BlockingComponent =>
-    lazy val second = ExecutionTask("EXECUTING 2", blocking) { ctx =>
+    lazy val second: Task = ExecutionTask("EXECUTING 2", blocking) { ctx =>
       println(ctx.get(Key1))
       Right(ctx.set(Key2, 1234))
     }
@@ -65,7 +65,7 @@ object Main extends App {
 
     sessionId <- workflow.init()
 
-    result <- workflow.execute(sessionId/*, Param(Key3, false)*/)
+    result <- workflow.execute(sessionId, Param(Key3, false))
 
   } yield result
 
@@ -76,41 +76,45 @@ object Main extends App {
 }
 
 case object Key1 extends Key[String]
+
 case object Key2 extends Key[Int]
+
 case object Key3 extends Key[Boolean]
 
 
 object Main2 extends App {
 
-  import org.json4s.native.Serialization.write
-
-  implicit val format = org.json4s.DefaultFormats
-
-
-  val ctx = new ExecutionContext("1", Map.empty).set(Key1, "hola").set(Key2, 123)
-
-  val r = write(ctx.variables)
-
-
-  //  val r = variables.get(Key1)
-
-  println(r)
+  //  import org.json4s.native.Serialization.write
+  //
+  //  implicit val format = org.json4s.DefaultFormats
+  //
+  //
+  //  val ctx = new TaskContext("1", Map.empty).set(Key1, "hola").set(Key2, 123)
+  //
+  //  val r = write(ctx.variables)
+  //
+  //
+  //    val r = variables.get(Key1)
+  //
+  //  println(r)
 
 
   trait Animal {
-    def stop():Unit = println("stop moving")
+    def stop(): Unit = println("stop moving")
   }
 
   class Dog extends Animal {
-    def bark:String = "Woof!"
+    def bark: String = "Woof!"
   }
 
   trait Security {
     this: Animal =>
-    def lookout:Unit = { stop(); println("looking out!") }
+    def lookout: Unit = {
+      stop(); println("looking out!")
+    }
   }
 
-  val goodboy:Dog = new Dog
+  val goodboy: Dog = new Dog
 
   goodboy.bark
   // Woof!
@@ -120,34 +124,36 @@ object Main2 extends App {
   guardDog.lookout
 
 
-
   trait Patient {
     this: Reader =>
-    def isQuite:Boolean = isReading
-    def isSlow:Boolean = true
+    def isQuite: Boolean = isReading
+
+    def isSlow: Boolean = true
   }
 
   trait Reader {
     this: Patient =>
-    def read():Unit = if(isSlow) println("Reading Slow...") else println("Reading Fast...")
+    def read(): Unit = if (isSlow) println("Reading Slow...") else println("Reading Fast...")
+
     def isReading = true
   }
 
   val person = new Patient with Reader
 
 
-
   trait Human {
-    def isGoodForSports:Boolean
+    def isGoodForSports: Boolean
   }
 
   trait Programmer extends Human {
-    def readStackOverflow():Unit = println("Reading...")
+    def readStackOverflow(): Unit = println("Reading...")
+
     override def isGoodForSports: Boolean = false
   }
 
   trait Sportsman extends Human {
-    def play():Unit = println("Playing something")
+    def play(): Unit = println("Playing something")
+
     override def isGoodForSports: Boolean = true
   }
 
@@ -156,11 +162,6 @@ object Main2 extends App {
 
   val bar = new Sportsman with Programmer
   println(bar.isGoodForSports)
-
-
-
-
-
 
 
 }

@@ -14,35 +14,36 @@
  * limitations under the License.
  */
 
-package flowly.context
+package flowly.tasks.context
 
+import flowly.repository.model.Session
 import flowly.tasks.{BlockingTask, DisjunctionTask, ExecutionTask}
 
 /**
   * Interface used by [[BlockingTask]] and [[DisjunctionTask]]
   */
-trait ReadableExecutionContext {
+trait ReadableTaskContext {
 
-  def sessionId:String
+  def sessionId: String
 
-  def get[T](key:Key[T]):Option[T]
+  def get[T](key: Key[T]): Option[T]
 
-  def getOrElse[T](key:Key[T], f: => T):T
+  def getOrElse[T](key: Key[T], f: => T): T
 
-  def contains(key:Key[_]):Boolean
+  def contains(key: Key[_]): Boolean
 
-  def exists[T](key:Key[T], f:T => Boolean):Boolean
+  def exists[T](key: Key[T], f: T => Boolean): Boolean
 
 }
 
 /**
   * Interface used by [[ExecutionTask]]
   */
-trait WriteableExecutionContext extends ReadableExecutionContext {
+trait WriteableTaskContext extends ReadableTaskContext {
 
-  def set[T](key:Key[T], value:T):WriteableExecutionContext
+  def set[T](key: Key[T], value: T): WriteableTaskContext
 
-  def unset(key:Key[_]):WriteableExecutionContext
+  def unset(key: Key[_]): WriteableTaskContext
 
 }
 
@@ -56,18 +57,24 @@ trait WriteableExecutionContext extends ReadableExecutionContext {
   * @param sessionId workflow instance id
   * @param variables variables stored in the workflow
   */
-case class ExecutionContext(sessionId:String, variables: Map[String, Any]) extends WriteableExecutionContext {
+class TaskContext private(val sessionId: String, val variables: Map[String, Any]) extends WriteableTaskContext {
 
-  def get[T](key:Key[T]):Option[T] = variables.get(key.identifier).asInstanceOf[Option[T]]
+  def get[T](key: Key[T]): Option[T] = variables.get(key.identifier).asInstanceOf[Option[T]]
 
-  def getOrElse[T](key:Key[T], orElse: => T):T = get(key).getOrElse(orElse)
+  def getOrElse[T](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
 
-  def set[T](key:Key[T], value:T):ExecutionContext = copy(variables = variables.updated(key.identifier, value))
+  def set[T](key: Key[T], value: T): TaskContext = new TaskContext(sessionId, variables.updated(key.identifier, value))
 
-  def unset(key:Key[_]):ExecutionContext = copy(variables = variables.filterKeys(_ != key.identifier))
+  def unset(key: Key[_]): TaskContext = new TaskContext(sessionId, variables.filterKeys(_ != key.identifier))
 
-  def contains(key:Key[_]):Boolean = variables.contains(key.identifier)
+  def contains(key: Key[_]): Boolean = variables.contains(key.identifier)
 
-  def exists[T](key:Key[T], f:T => Boolean):Boolean = get(key).exists(f)
+  def exists[T](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
+
+}
+
+object TaskContext {
+
+  private[flowly] def apply(session: Session): TaskContext = new TaskContext(session.id, session.variables)
 
 }

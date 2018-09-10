@@ -16,7 +16,8 @@
 
 package flowly.tasks
 
-import flowly.context._
+import flowly.tasks.context.TaskContext
+import flowly.tasks.result.TaskResult
 
 /**
   * [[Task]] is something to do inside a workflow
@@ -28,7 +29,7 @@ trait Task {
 
   def id: String
 
-  def execute(ctx: ExecutionContext): TaskResult
+  def execute(ctx: TaskContext): TaskResult
 
   def followedBy: List[Task]
 

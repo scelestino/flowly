@@ -14,32 +14,33 @@
  * limitations under the License.
  */
 
-package flowly
+package flowly.repository
 
-import java.time.LocalDateTime
 import java.util.UUID
 
-import flowly.session.Session
+import flowly.repository.model.Session
+import flowly.{ErrorOr, SessionNotFound}
 
 import scala.collection.mutable
 
 // dummy repo
 class Repository {
 
-  private val storage:mutable.Map[String, Session] = mutable.Map[String, Session]()
+  private val storage: mutable.Map[String, Session] = mutable.Map[String, Session]()
 
-  def createSession(initialVariables:Map[String, Any]):ErrorOr[String] = {
+  def createSession(initialVariables: Map[String, Any]): ErrorOr[String] = {
     val id = UUID.randomUUID().toString
     saveSession(Session(id, initialVariables))
     Right(id)
   }
 
-  def getSession(sessionId:String):ErrorOr[Session] = {
-    storage.get(sessionId).toRight(new RepositoryError("session not found", null))
+  def getSession(sessionId: String): ErrorOr[Session] = {
+    storage.get(sessionId).toRight(SessionNotFound(sessionId))
   }
 
-  def saveSession(session: Session):ErrorOr[Session] = {
+  def saveSession(session: Session): ErrorOr[Session] = {
     storage.update(session.id, session)
+    println(s"saving session ${session.status} ${session.lastExecution}")
     Right(session)
   }
 

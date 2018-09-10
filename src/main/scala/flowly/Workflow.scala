@@ -16,10 +16,11 @@
 
 package flowly
 
-import flowly.context.ExecutionContext
-import flowly.session.Session
+import flowly.repository.Repository
+import flowly.repository.model.Session
 import flowly.tasks._
-
+import flowly.tasks.context.TaskContext
+import flowly.tasks.result._
 
 trait Workflow {
 
@@ -28,68 +29,88 @@ trait Workflow {
   // temp
   val repository = new Repository
 
+  /**
+    * Initialize a new workflow session
+    *
+    * @param params initial workflow variables
+    * @return session id
+    */
   def init(params: Param*): ErrorOr[String] = {
-    repository.createSession(params.map(_.value).toMap)
+    repository.createSession(params.toVariables)
   }
 
-  def execute(sessionId: String, params: Param*): ErrorOr[TaskResult] = {
+  /**
+    * Execute an instance of [[Workflow]] form its current [[Task]]
+    *
+    * @param sessionId session id
+    * @param params    new workflow variables
+    * @return execution result
+    */
+  def execute(sessionId: String, params: Param*): ErrorOr[Result] = {
 
     for {
 
-      session <- repository.getSession(sessionId)
+      // Get a Session, can be executed?
+      session <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
-      // can be resumed?
+      // Get current Task
+      currentTask <- {
 
-      taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
+        val taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
 
-      task <- lookup(taskId)
+        tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
 
-      newVariables = params.map(_.value).toMap
+      }
 
-      result <- execute(task, ExecutionContext(sessionId, session.variables ++ newVariables), session)
+      // Execute current Task
+      result <- execute(currentTask, session.update(session.variables ++ params.toVariables))
 
     } yield result
 
   }
 
-  private def execute(task: Task, ctx: ExecutionContext, session: Session): ErrorOr[TaskResult] = {
+  private def execute(task: Task, session: Session): ErrorOr[Result] = {
 
-    // save session runnning
+    // Update Session to Running Status
+    repository.saveSession(session.running(task)).flatMap { runningSession =>
 
-    // try catch??
-    task.execute(ctx) match {
+      // Execute Task
+      task.execute(TaskContext(runningSession)) match {
 
-      case Continue(taskId, next, updatedCtx) =>
+        case Continue(taskId, next, ctx) =>
 
-        // log?
-        println(s"$taskId finished, continue")
+          // log?
+          println(s"$taskId continue")
 
-        // save session?
-        repository.saveSession(session.copy(variables = updatedCtx.variables))
+          // Update Session and execute next Task
+          repository.saveSession(runningSession.update(ctx.variables)).flatMap(execute(next, _))
+        // TODO: what status between tasks?
 
-        // execute next
-        execute(next, updatedCtx, session)
+        case Blocked(taskId) =>
 
-      case result@Blocked(taskId) =>
+          // log?
+          println(s"$taskId blocked")
 
-        // log?
-        println(s"$taskId finished, blocked")
+          // how to get result
+          repository.saveSession(runningSession.blocked(task)).map(_ => Result("", taskId))
 
-        repository.saveSession(session.blocked(task)).map(_ => result)
+        case Finished(taskId) =>
 
-      case result@Finished(taskId) =>
+          // log?
+          println(s"$taskId finished")
 
-        // log?
-        println(s"$taskId finished, finished")
+          // how to get result
+          repository.saveSession(runningSession.finished(task)).map(_ => Result("", taskId))
 
-        repository.saveSession(session.finished(task)).map(_ => result)
+        case OnError(taskId, msg) =>
 
-      case result@OnError(taskId, msg) =>
+          // log?
+          println(s"$taskId on error")
 
-        // log?
-        println(s"$taskId finished, on error")
+          // how to get result
+          repository.saveSession(runningSession.onError(task)).map(_ => Result("", taskId))
 
-        repository.saveSession(session.onError(task)).map(_ => result)
+      }
 
     }
 
@@ -101,12 +122,13 @@ trait Workflow {
     * @param sessionId session id
     * @return session id
     */
-  def cancel(sessionId:String):ErrorOr[String] = {
+  def cancel(sessionId: String): ErrorOr[String] = {
 
     for {
 
       session <- repository.getSession(sessionId)
 
+      // TODO: reason?
       result <- repository.saveSession(session.cancelled())
 
     } yield result
@@ -119,7 +141,7 @@ trait Workflow {
     *
     * @return list of [[Task]]
     */
-  def tasks: List[Task] = {
+  private def tasks: List[Task] = {
     def tasks(currentTask: Task, accum: List[Task]): List[Task] = {
       if (accum.contains(currentTask)) accum
       else currentTask.followedBy.foldRight(currentTask :: accum)(tasks)
@@ -128,9 +150,7 @@ trait Workflow {
     tasks(initialTask, Nil)
   }
 
-  def lookup(taskId: String): ErrorOr[Task] = tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
-
   // draft
-  def variables(sessionId: String): Map[String, Any] = repository.getSession(sessionId).map(_.variables).getOrElse(Map.empty)
+  def variables(sessionId: String): ErrorOr[Map[String, Any]] = repository.getSession(sessionId).map(_.variables)
 
 }

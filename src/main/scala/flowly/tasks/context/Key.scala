@@ -14,12 +14,25 @@
  * limitations under the License.
  */
 
-package flowly
+package flowly.tasks.context
 
-import flowly.context.ExecutionContext
-
-package object tasks {
-
-  type ExecutionTaskResult = Either[String, ExecutionContext]
-
+/**
+  * Interface used to get access to objects inside an [[TaskContext]], it creates a relation
+  * between an identifier and a type.
+  *
+  * {{{
+  *
+  *   case object Key1 extends Key[String]
+  *   case object Key2 extends Key[Int]
+  *   case object Key3 extends Key[List[Foo]]
+  *
+  *   val ctx = new ExecutionContext("bar", Map.empty).set(Key2, 123)
+  *
+  * }}}
+  *
+  * @tparam A what kind of object can be used with this key
+  */
+trait Key[A] {
+  this: Product =>
+  def identifier: String = this.toString
 }
