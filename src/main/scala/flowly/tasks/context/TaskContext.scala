@@ -22,24 +22,26 @@ import flowly.tasks.{BlockingTask, DisjunctionTask, ExecutionTask}
 /**
   * Interface used by [[BlockingTask]] and [[DisjunctionTask]]
   */
+// TODO: change name, we can use this object at [[Result]]
 trait ReadableTaskContext {
+  this: { val variables: Map[String, Any] } =>
 
   def sessionId: String
 
-  def get[T](key: Key[T]): Option[T]
+  def get[T](key: Key[T]): Option[T] = variables.get(key.identifier).asInstanceOf[Option[T]]
 
-  def getOrElse[T](key: Key[T], f: => T): T
+  def getOrElse[T](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
 
-  def contains(key: Key[_]): Boolean
+  def contains(key: Key[_]): Boolean = variables.contains(key.identifier)
 
-  def exists[T](key: Key[T], f: T => Boolean): Boolean
+  def exists[T](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
 
 }
 
 /**
   * Interface used by [[ExecutionTask]]
   */
-trait WriteableTaskContext extends ReadableTaskContext {
+trait WriteableTaskContext {
 
   def set[T](key: Key[T], value: T): WriteableTaskContext
 
@@ -57,24 +59,14 @@ trait WriteableTaskContext extends ReadableTaskContext {
   * @param sessionId workflow instance id
   * @param variables variables stored in the workflow
   */
-class TaskContext private(val sessionId: String, val variables: Map[String, Any]) extends WriteableTaskContext {
-
-  def get[T](key: Key[T]): Option[T] = variables.get(key.identifier).asInstanceOf[Option[T]]
-
-  def getOrElse[T](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
+class TaskContext private(val sessionId: String, val variables: Map[String, Any]) extends ReadableTaskContext with WriteableTaskContext {
 
   def set[T](key: Key[T], value: T): TaskContext = new TaskContext(sessionId, variables.updated(key.identifier, value))
 
   def unset(key: Key[_]): TaskContext = new TaskContext(sessionId, variables.filterKeys(_ != key.identifier))
 
-  def contains(key: Key[_]): Boolean = variables.contains(key.identifier)
-
-  def exists[T](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
-
 }
 
 object TaskContext {
-
   private[flowly] def apply(session: Session): TaskContext = new TaskContext(session.id, session.variables)
-
 }

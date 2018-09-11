@@ -56,4 +56,6 @@ object WFStatus extends Enumeration {
 
   implicit def enum2String(value: WFStatus): String = value.toString
 
+  implicit def string2Enum(value: String):WFStatus = WFStatus.withName(value)
+
 }

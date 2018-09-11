@@ -65,12 +65,19 @@ object Main extends App {
 
     sessionId <- workflow.init()
 
-    result <- workflow.execute(sessionId, Param(Key3, false))
+    result <- workflow.execute(sessionId)
 
-  } yield result
+    _ = println(s"the result is $result\n")
+
+    result2 <- workflow.execute(sessionId, Param(Key3, false))
+
+  } yield result2
 
 
-  println(result)
+  result match {
+    case Right(r) => println(s"THE RESULT CONTAINS ${r.variables}")
+    case Left(ex) => println(ex)
+  }
 
 
 }
@@ -80,6 +87,7 @@ case object Key1 extends Key[String]
 case object Key2 extends Key[Int]
 
 case object Key3 extends Key[Boolean]
+
 
 
 object Main2 extends App {

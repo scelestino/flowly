@@ -40,7 +40,7 @@ trait Workflow {
   }
 
   /**
-    * Execute an instance of [[Workflow]] form its current [[Task]]
+    * Execute an instance of [[Workflow]] form its current [[Task]] with the given params
     *
     * @param sessionId session id
     * @param params    new workflow variables
@@ -51,19 +51,24 @@ trait Workflow {
     for {
 
       // Get a Session, can be executed?
-      session <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
+      currentSession <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
       // Get current Task
       currentTask <- {
 
-        val taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
+        val taskId = currentSession.lastExecution.map(_.taskId).getOrElse(initialTask.id)
 
         tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
 
       }
 
+      _ = currentSession.copy()
+
+      // Update Session to Running Status
+      session <- repository.saveSession(currentSession.running(currentTask, params:_*))
+
       // Execute current Task
-      result <- execute(currentTask, session.update(session.variables ++ params.toVariables))
+      result <- execute(currentTask, session)
 
     } yield result
 
@@ -71,11 +76,8 @@ trait Workflow {
 
   private def execute(task: Task, session: Session): ErrorOr[Result] = {
 
-    // Update Session to Running Status
-    repository.saveSession(session.running(task)).flatMap { runningSession =>
-
       // Execute Task
-      task.execute(TaskContext(runningSession)) match {
+      task.execute(TaskContext(session)) match {
 
         case Continue(taskId, next, ctx) =>
 
@@ -83,8 +85,8 @@ trait Workflow {
           println(s"$taskId continue")
 
           // Update Session and execute next Task
-          repository.saveSession(runningSession.update(ctx.variables)).flatMap(execute(next, _))
-        // TODO: what status between tasks?
+          // TODO: find a better way to update variables context
+          repository.saveSession(session.running(next, ctx)).flatMap(execute(next, _))
 
         case Blocked(taskId) =>
 
@@ -92,7 +94,9 @@ trait Workflow {
           println(s"$taskId blocked")
 
           // how to get result
-          repository.saveSession(runningSession.blocked(task)).map(_ => Result("", taskId))
+          repository.saveSession(session.blocked(task)).map( s => {
+            Result(s.id, taskId, s.variables, s.status)
+          })
 
         case Finished(taskId) =>
 
@@ -100,7 +104,9 @@ trait Workflow {
           println(s"$taskId finished")
 
           // how to get result
-          repository.saveSession(runningSession.finished(task)).map(_ => Result("", taskId))
+          repository.saveSession(session.finished(task)).map( s => {
+            Result(s.id, taskId, s.variables, s.status)
+          })
 
         case OnError(taskId, msg) =>
 
@@ -108,11 +114,13 @@ trait Workflow {
           println(s"$taskId on error")
 
           // how to get result
-          repository.saveSession(runningSession.onError(task)).map(_ => Result("", taskId))
+          repository.saveSession(session.onError(task)).map( s => {
+            Result(s.id, taskId, s.variables, s.status)
+          })
+
+          // TODO: tasks result can be Cancelled???
 
       }
-
-    }
 
   }
 
@@ -122,14 +130,13 @@ trait Workflow {
     * @param sessionId session id
     * @return session id
     */
-  def cancel(sessionId: String): ErrorOr[String] = {
+  def cancel(sessionId: String, reason:String): ErrorOr[String] = {
 
     for {
 
       session <- repository.getSession(sessionId)
 
-      // TODO: reason?
-      result <- repository.saveSession(session.cancelled())
+      result <- repository.saveSession(session.cancelled(reason))
 
     } yield result
 
