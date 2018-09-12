@@ -16,8 +16,8 @@
 
 package flowly
 
+import flowly.variables.Key
 import flowly.tasks._
-import flowly.tasks.context.Key
 
 object Main extends App {
 
@@ -36,21 +36,21 @@ object Main extends App {
 
   trait SecondComponent {
     this: BlockingComponent =>
-    lazy val second: Task = ExecutionTask("EXECUTING 2", blocking) { ctx =>
-      println(ctx.get(Key1))
-      Right(ctx.set(Key2, 1234))
+    lazy val second: Task = ExecutionTask("EXECUTING 2", blocking) { (sessionId, variables) =>
+      println(variables.get(Key1))
+      Right(variables.set(Key2, 1234))
     }
   }
 
   trait DisjunctionComponent {
     this: Finish2Component with SecondComponent =>
-    lazy val disjunction: Task = DisjunctionTask("Disjunction", finish2, second, _.sessionId == "AAA")
+    lazy val disjunction: Task = DisjunctionTask("Disjunction", finish2, second, _.contains(Key4))
   }
 
   trait FirstComponent {
     this: DisjunctionComponent =>
-    lazy val first: Task = ExecutionTask("EXECUTING 1", disjunction) { ctx =>
-      Right(ctx.set(Key1, "foo bar baz"))
+    lazy val first: Task = ExecutionTask("EXECUTING 1", disjunction) { (sessionId, variables) =>
+      Right(variables.set(Key1, "foo bar baz"))
     }
   }
 
@@ -69,7 +69,7 @@ object Main extends App {
 
     _ = println(s"the result is $result\n")
 
-    result2 <- workflow.execute(sessionId, Param(Key3, false))
+    result2 <- workflow.execute(sessionId, Key3 -> false)
 
   } yield result2
 
@@ -79,7 +79,6 @@ object Main extends App {
     case Left(ex) => println(ex)
   }
 
-
 }
 
 case object Key1 extends Key[String]
@@ -87,6 +86,9 @@ case object Key1 extends Key[String]
 case object Key2 extends Key[Int]
 
 case object Key3 extends Key[Boolean]
+
+case object Key4 extends Key[Boolean]
+
 
 
 
@@ -116,10 +118,8 @@ object Main2 extends App {
   }
 
   trait Security {
-    this: Animal =>
-    def lookout: Unit = {
-      stop(); println("looking out!")
-    }
+    this: { def stop():Unit } =>
+    def lookout: Unit = { stop(); println("looking out!") }
   }
 
   val goodboy: Dog = new Dog
@@ -131,6 +131,15 @@ object Main2 extends App {
   val guardDog = new Dog with Security
   guardDog.lookout
 
+
+//  class Human {
+//    def stop(): Unit = println("it stops and crosses their arms")
+//  }
+//
+//  val securityGuard = new Human with Security
+//  securityGuard.lookout
+  // it stops and crosses their arms
+  // looking out!
 
   trait Patient {
     this: Reader =>

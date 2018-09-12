@@ -17,8 +17,7 @@
 package flowly.tasks
 
 import flowly.ErrorOr
-import flowly.tasks.context.TaskContext
-import flowly.tasks.result.{Continue, OnError, TaskResult}
+import flowly.variables.{ReadableVariables, Variables}
 
 /**
   * An instance of this [[Task]] will execute your code and can change the execution context.
@@ -26,27 +25,28 @@ import flowly.tasks.result.{Continue, OnError, TaskResult}
   */
 trait ExecutionTask extends SingleTask {
 
-  def execute(ctx: TaskContext): TaskResult = try {
-    perform(ctx).fold(OnError(id, _), Continue(id, next, _))
+  def execute(sessionId:String, variables: Variables): TaskResult = try {
+    perform(sessionId, variables).fold(OnError(id, _), Continue(id, next, _))
   } catch {
     case throwable: Throwable => OnError(id, throwable)
   }
 
-  protected def perform(ctx: TaskContext): ErrorOr[TaskContext]
+  protected def perform(sessionId:String, variables: Variables): ErrorOr[Variables]
 
 }
 
 object ExecutionTask {
 
-  def apply(_id: String, _next: Task)(_perform: TaskContext => ErrorOr[TaskContext]): ExecutionTask = new ExecutionTask {
+  def apply(_id: String, _next: Task)(_perform: (String, Variables) => ErrorOr[Variables]): ExecutionTask = new ExecutionTask {
+
     def id: String = _id
 
     def next: Task = _next
 
-    def perform(ctx: TaskContext): ErrorOr[TaskContext] = _perform(ctx)
+    def perform(sessionId:String, variables:Variables): ErrorOr[Variables] = _perform(sessionId, variables)
+
   }
 
 }
-
 
 // TODO: an execution task could cancel a workflow?????

@@ -16,7 +16,7 @@
 
 package flowly
 
-import flowly.tasks.context.{Key, TaskContext}
+import flowly.variables.Key
 import org.scalatest.{FlatSpec, Matchers}
 
 class TaskContextSpec extends FlatSpec with Matchers {

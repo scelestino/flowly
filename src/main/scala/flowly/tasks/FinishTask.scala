@@ -16,8 +16,7 @@
 
 package flowly.tasks
 
-import flowly.tasks.context.TaskContext
-import flowly.tasks.result.{Finished, TaskResult}
+import flowly.variables.Variables
 
 /**
   * An instance of this [[Task]] is need be to used to finish a workflow execution.
@@ -30,7 +29,7 @@ import flowly.tasks.result.{Finished, TaskResult}
   */
 case class FinishTask(id: String) extends Task {
 
-  def execute(ctx: TaskContext): TaskResult = Finished(id)
+  def execute(sessionId:String, variables: Variables): TaskResult = Finish(id)
 
   def followedBy: List[Task] = Nil
 

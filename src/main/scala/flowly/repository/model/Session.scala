@@ -21,13 +21,11 @@ import java.time.LocalDateTime
 import flowly.Param
 import flowly.repository.model.WFStatus.WFStatus
 import flowly.tasks.Task
-import flowly.tasks.context.TaskContext
+import flowly.variables.Variables
 
-case class Session private(id: String, lastExecution: Option[Execution], variables: Map[String, Any], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: String) {
+case class Session private(id: String, lastExecution: Option[Execution], variables: Variables, cancellation: Option[Cancellation], createdAt: LocalDateTime, status: String) {
 
-  def running(task: Task, params:Param*): Session = changeStatus(task, variables ++ params.toVariables, WFStatus.RUNNING)
-
-  def running(task: Task, taskContext:TaskContext): Session = changeStatus(task, taskContext.variables, WFStatus.RUNNING)
+  def running(task: Task, variables: Variables): Session = changeStatus(task, variables, WFStatus.RUNNING)
 
   def blocked(task: Task): Session = changeStatus(task, variables, WFStatus.BLOCKED)
 
@@ -35,21 +33,21 @@ case class Session private(id: String, lastExecution: Option[Execution], variabl
 
   def onError(task: Task): Session = changeStatus(task, variables, WFStatus.ERROR)
 
-  def cancelled(reason:String): Session = copy(cancellation = Option(Cancellation(reason)), status = WFStatus.CANCELLED)
+  def cancelled(reason: String): Session = copy(cancellation = Option(Cancellation(reason)), status = WFStatus.CANCELLED)
 
   def isExecutable: Boolean = WFStatus.withName(status) match {
     case WFStatus.RUNNING | WFStatus.FINISHED | WFStatus.CANCELLED => false
     case _ => true
   }
 
-  private def changeStatus(task: Task, variables:Map[String,Any], status: WFStatus): Session = {
+  private def changeStatus(task: Task, variables: Variables, status: WFStatus): Session = {
     copy(lastExecution = Option(Execution(task.id)), variables = variables, status = status)
   }
 
 }
 
 object Session {
-  def apply(id: String, variables: Map[String, Any]): Session = {
+  def apply(id: String, variables: Variables): Session = {
     new Session(id, None, variables, None, LocalDateTime.now, WFStatus.CREATED)
   }
 }
@@ -60,7 +58,7 @@ object Execution {
   def apply(taskId: String): Execution = new Execution(taskId, LocalDateTime.now)
 }
 
-case class Cancellation(reason:String, at:LocalDateTime)
+case class Cancellation(reason: String, at: LocalDateTime)
 
 object Cancellation {
   def apply(reason: String): Cancellation = new Cancellation(reason, LocalDateTime.now)

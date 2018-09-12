@@ -16,8 +16,8 @@
 
 package flowly.tasks
 
-import flowly.tasks.context.{ReadableTaskContext, TaskContext}
-import flowly.tasks.result.{Blocked, Continue, OnError, TaskResult}
+import flowly.variables.{ReadableVariables, Variables}
+
 
 /**
   * An instance of this [[Task]] could block the execution if a given condition fails.
@@ -27,10 +27,10 @@ import flowly.tasks.result.{Blocked, Continue, OnError, TaskResult}
   */
 trait BlockingTask extends SingleTask {
 
-  def condition(ctx: ReadableTaskContext): Boolean
+  def condition(variables: ReadableVariables): Boolean
 
-  def execute(ctx: TaskContext): TaskResult = try {
-    if (condition(ctx)) Continue(id, next, ctx) else Blocked(id)
+  def execute(sessionId:String, variables:Variables): TaskResult = try {
+    if (condition(variables)) Continue(id, next, variables) else Block(id)
   } catch {
     case throwable: Throwable => OnError(id, throwable)
   }
@@ -39,12 +39,14 @@ trait BlockingTask extends SingleTask {
 
 object BlockingTask {
 
-  def apply(_id: String, _next: Task, _condition: ReadableTaskContext => Boolean): BlockingTask = new BlockingTask {
+  def apply(_id: String, _next: Task, _condition: ReadableVariables => Boolean): BlockingTask = new BlockingTask {
+
     def id: String = _id
 
     def next: Task = _next
 
-    def condition(ctx: ReadableTaskContext): Boolean = _condition(ctx)
+    def condition(variables: ReadableVariables): Boolean = _condition(variables)
+
   }
 
 }

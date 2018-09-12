@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package flowly.tasks.context
+package flowly.variables
+
 
 /**
-  * Interface used to get access to objects inside an [[TaskContext]], it creates a relation
+  * Interface used to get access to objects inside [[Variables]], it creates a relation
   * between an identifier and a type.
   *
   * {{{
@@ -26,7 +27,7 @@ package flowly.tasks.context
   *   case object Key2 extends Key[Int]
   *   case object Key3 extends Key[List[Foo]]
   *
-  *   val ctx = new ExecutionContext("bar", Map.empty).set(Key2, 123)
+  *   Variables(Map.empty).set(Key2, 123)
   *
   * }}}
   *

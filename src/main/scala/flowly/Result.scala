@@ -17,7 +17,15 @@
 package flowly
 
 import flowly.repository.model.WFStatus.WFStatus
-import flowly.tasks.context.ReadableTaskContext
+import flowly.variables.ReadableVariables
 
-// TODO: change redeable task context to something more generic
-case class Result(sessionId: String, taskId: String, variables:Map[String, Any], status:WFStatus) extends ReadableTaskContext
+/**
+  *
+  *
+  * @param sessionId
+  * @param taskId
+  * @param variables
+  * @param status
+  */
+case class Result(sessionId: String, taskId: String, variables:ReadableVariables, status:WFStatus)
+

@@ -16,7 +16,7 @@
 
 package flowly
 
-import flowly.tasks.context.Key
+import flowly.variables.{Key, Variables}
 
 /**
   * Object used to ensure the relationship between keys and values at variable arguments methods
@@ -28,10 +28,15 @@ class Param private(underlying: (String, Any)) {
 }
 
 object Param {
+
   def apply[A](key: Key[A], value: A): Param = new Param(key.identifier, value)
 
   implicit class ParamSeqOps(params: Seq[Param]) {
-    def toVariables: Map[String, Any] = params.map(_.value).toMap
+    private[flowly] def toVariables: Variables = Variables(params.map(_.value).toMap)
+  }
+
+  implicit def tuple2Param[A](keyValue: (Key[A], A)):Param = keyValue match {
+    case (key, value) => Param(key, value)
   }
 
 }

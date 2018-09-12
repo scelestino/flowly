@@ -19,8 +19,7 @@ package flowly
 import flowly.repository.Repository
 import flowly.repository.model.Session
 import flowly.tasks._
-import flowly.tasks.context.TaskContext
-import flowly.tasks.result._
+import flowly.variables.{ReadableVariables, Variables}
 
 trait Workflow {
 
@@ -62,49 +61,49 @@ trait Workflow {
 
       }
 
-      _ = currentSession.copy()
-
-      // Update Session to Running Status
-      session <- repository.saveSession(currentSession.running(currentTask, params:_*))
+      // Merge old and new Variables
+      currentVariables = currentSession.variables.merge(params.toVariables)
 
       // Execute current Task
-      result <- execute(currentTask, session)
+      result <- execute(currentTask, currentSession, currentVariables)
 
     } yield result
 
   }
 
-  private def execute(task: Task, session: Session): ErrorOr[Result] = {
+  private def execute(task: Task, session: Session, variables:Variables): ErrorOr[Result] = {
+
+    // Update Session to Running Status
+    repository.saveSession(session.running(task, variables)).flatMap { currentSession =>
 
       // Execute Task
-      task.execute(TaskContext(session)) match {
+      task.execute(currentSession.id, variables) match {
 
-        case Continue(taskId, next, ctx) =>
+        case Continue(taskId, next, currentVariables) =>
 
           // log?
           println(s"$taskId continue")
 
-          // Update Session and execute next Task
-          // TODO: find a better way to update variables context
-          repository.saveSession(session.running(next, ctx)).flatMap(execute(next, _))
+          // Execute next Task
+          execute(next, currentSession, currentVariables)
 
-        case Blocked(taskId) =>
+        case Block(taskId) =>
 
           // log?
           println(s"$taskId blocked")
 
           // how to get result
-          repository.saveSession(session.blocked(task)).map( s => {
+          repository.saveSession(currentSession.blocked(task)).map(s => {
             Result(s.id, taskId, s.variables, s.status)
           })
 
-        case Finished(taskId) =>
+        case Finish(taskId) =>
 
           // log?
           println(s"$taskId finished")
 
           // how to get result
-          repository.saveSession(session.finished(task)).map( s => {
+          repository.saveSession(currentSession.finished(task)).map(s => {
             Result(s.id, taskId, s.variables, s.status)
           })
 
@@ -114,13 +113,14 @@ trait Workflow {
           println(s"$taskId on error")
 
           // how to get result
-          repository.saveSession(session.onError(task)).map( s => {
+          repository.saveSession(currentSession.onError(task)).map(s => {
             Result(s.id, taskId, s.variables, s.status)
           })
-
-          // TODO: tasks result can be Cancelled???
+        // TODO: tasks result can be Cancelled???
 
       }
+
+    }
 
   }
 
@@ -157,7 +157,12 @@ trait Workflow {
     tasks(initialTask, Nil)
   }
 
-  // draft
-  def variables(sessionId: String): ErrorOr[Map[String, Any]] = repository.getSession(sessionId).map(_.variables)
+  /**
+    * It returns Variables for a given session id
+    *
+    * @param sessionId session id
+    * @return Variables (read only)
+    */
+  def variables(sessionId: String): ErrorOr[ReadableVariables] = repository.getSession(sessionId).map(_.variables)
 
 }

@@ -19,6 +19,7 @@ package flowly.repository
 import java.util.UUID
 
 import flowly.repository.model.Session
+import flowly.variables.Variables
 import flowly.{ErrorOr, SessionNotFound}
 
 import scala.collection.mutable
@@ -28,7 +29,7 @@ class Repository {
 
   private val storage: mutable.Map[String, Session] = mutable.Map[String, Session]()
 
-  def createSession(initialVariables: Map[String, Any]): ErrorOr[String] = {
+  def createSession(initialVariables: Variables): ErrorOr[String] = {
     val id = UUID.randomUUID().toString
     saveSession(Session(id, initialVariables))
     Right(id)

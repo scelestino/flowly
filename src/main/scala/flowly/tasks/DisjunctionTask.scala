@@ -17,8 +17,7 @@
 package flowly.tasks
 
 import flowly.DisjunctionTaskError
-import flowly.tasks.context.{ReadableTaskContext, TaskContext}
-import flowly.tasks.result.{Continue, OnError, TaskResult}
+import flowly.variables.{ReadableVariables, Variables}
 
 /**
   * An instance of this [[Task]] will choose a branch of execution between different paths based on given conditions.
@@ -28,11 +27,11 @@ import flowly.tasks.result.{Continue, OnError, TaskResult}
   */
 trait DisjunctionTask extends Task {
 
-  def branches: List[(ReadableTaskContext => Boolean, Task)]
+  def branches: List[(ReadableVariables => Boolean, Task)]
 
-  def execute(ctx: TaskContext): TaskResult = try {
-    next(ctx) match {
-      case Some(next) => Continue(id, next, ctx)
+  def execute(sessionId:String, variables: Variables): TaskResult = try {
+    next(variables) match {
+      case Some(next) => Continue(id, next, variables)
       case None => OnError(id, DisjunctionTaskError())
     }
   } catch {
@@ -41,19 +40,19 @@ trait DisjunctionTask extends Task {
 
   def followedBy: List[Task] = branches.collect { case (_, task) => task }
 
-  private def next(ctx: TaskContext): Option[Task] = branches.collectFirst { case (condition, task) if condition(ctx) => task }
+  private def next(variables: ReadableVariables): Option[Task] = branches.collectFirst { case (condition, task) if condition(variables) => task }
 
 }
 
 object DisjunctionTask {
 
-  def apply(_id: String, _branches: (ReadableTaskContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
+  def apply(_id: String, _branches: (ReadableVariables => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
     def id: String = _id
 
-    def branches: List[(ReadableTaskContext => Boolean, Task)] = _branches.toList
+    def branches: List[(ReadableVariables => Boolean, Task)] = _branches.toList
   }
 
-  def apply(_id: String, ifTrue: Task, ifFalse: Task, condition: ReadableTaskContext => Boolean): DisjunctionTask = {
+  def apply(_id: String, ifTrue: Task, ifFalse: Task, condition: ReadableVariables => Boolean): DisjunctionTask = {
     apply(_id, (condition, ifTrue), (_ => true, ifFalse))
   }
 
