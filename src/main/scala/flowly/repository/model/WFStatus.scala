@@ -20,42 +20,18 @@ package flowly.repository.model
   * Workflow Status
   *
   */
-object WFStatus extends Enumeration {
-  type WFStatus = Value
+object WFStatus {
 
-  /**
-    *
-    */
-  val CREATED = Value
+  val CREATED:String = "CREATED"
 
-  /**
-    *
-    */
-  val RUNNING = Value
+  val RUNNING:String = "RUNNING"
 
-  /**
-    *
-    */
-  val ERROR = Value
+  val ERROR:String = "ERROR"
 
-  /**
-    *
-    */
-  val FINISHED = Value
+  val FINISHED:String = "FINISHED"
 
+  val BLOCKED:String = "BLOCKED"
 
-  /**
-    *
-    */
-  val BLOCKED = Value
-
-  /**
-    *
-    */
-  val CANCELLED = Value
-
-  implicit def enum2String(value: WFStatus): String = value.toString
-
-  implicit def string2Enum(value: String):WFStatus = WFStatus.withName(value)
+  val CANCELLED:String = "CANCELLED"
 
 }

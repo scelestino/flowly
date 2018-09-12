@@ -18,8 +18,6 @@ package flowly.repository.model
 
 import java.time.LocalDateTime
 
-import flowly.Param
-import flowly.repository.model.WFStatus.WFStatus
 import flowly.tasks.Task
 import flowly.variables.Variables
 
@@ -35,12 +33,12 @@ case class Session private(id: String, lastExecution: Option[Execution], variabl
 
   def cancelled(reason: String): Session = copy(cancellation = Option(Cancellation(reason)), status = WFStatus.CANCELLED)
 
-  def isExecutable: Boolean = WFStatus.withName(status) match {
+  def isExecutable: Boolean = status match {
     case WFStatus.RUNNING | WFStatus.FINISHED | WFStatus.CANCELLED => false
     case _ => true
   }
 
-  private def changeStatus(task: Task, variables: Variables, status: WFStatus): Session = {
+  private def changeStatus(task: Task, variables: Variables, status: String): Session = {
     copy(lastExecution = Option(Execution(task.id)), variables = variables, status = status)
   }
 

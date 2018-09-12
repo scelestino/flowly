@@ -16,7 +16,6 @@
 
 package flowly
 
-import flowly.repository.model.WFStatus.WFStatus
 import flowly.variables.ReadableVariables
 
 /**
@@ -27,5 +26,5 @@ import flowly.variables.ReadableVariables
   * @param variables
   * @param status
   */
-case class Result(sessionId: String, taskId: String, variables:ReadableVariables, status:WFStatus)
+case class Result(sessionId: String, taskId: String, variables:ReadableVariables, status:String)
 

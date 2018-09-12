@@ -59,7 +59,7 @@ class Variables private (underlying:Map[String, Any]) extends ReadableVariables 
   /**
     * It returns raw values from Variables
     *
-    * @return Map
+    * @return
     */
   private[flowly] def values:Map[String, Any] = underlying
 
