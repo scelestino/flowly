@@ -20,33 +20,39 @@ import java.time.LocalDateTime
 
 import flowly.tasks.Task
 import flowly.variables.Variables
+import Status._
+import flowly.repository.model.Session.{SessionId, Status}
 
-case class Session private(id: String, lastExecution: Option[Execution], variables: Variables, cancellation: Option[Cancellation], createdAt: LocalDateTime, status: String) {
+case class Session(id: SessionId, variables: Variables, lastExecution: Option[Execution], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status) {
 
-  def running(task: Task, variables: Variables): Session = changeStatus(task, variables, WFStatus.RUNNING)
+  def running(task: Task, variables: Variables): Session = changeStatus(task, variables, RUNNING)
 
-  def blocked(task: Task): Session = changeStatus(task, variables, WFStatus.BLOCKED)
+  def blocked(task: Task): Session = changeStatus(task, variables, BLOCKED)
 
-  def finished(task: Task): Session = changeStatus(task, variables, WFStatus.FINISHED)
+  def finished(task: Task): Session = changeStatus(task, variables, FINISHED)
 
-  def onError(task: Task): Session = changeStatus(task, variables, WFStatus.ERROR)
+  def onError(task: Task, throwable: Throwable): Session = changeStatus(task, variables, ERROR)
 
-  def cancelled(reason: String): Session = copy(cancellation = Option(Cancellation(reason)), status = WFStatus.CANCELLED)
+  def cancelled(reason: String): Session = copy(cancellation = Option(Cancellation(reason)), status = CANCELLED)
 
   def isExecutable: Boolean = status match {
-    case WFStatus.RUNNING | WFStatus.FINISHED | WFStatus.CANCELLED => false
+    case RUNNING | FINISHED | CANCELLED => false
     case _ => true
   }
 
-  private def changeStatus(task: Task, variables: Variables, status: String): Session = {
+  private def changeStatus(task: Task, variables: Variables, status: Status): Session = {
     copy(lastExecution = Option(Execution(task.id)), variables = variables, status = status)
   }
 
 }
 
 object Session {
-  def apply(id: String, variables: Variables): Session = {
-    new Session(id, None, variables, None, LocalDateTime.now, WFStatus.CREATED)
+
+  type SessionId = String
+  type Status    = String
+
+  def apply(id: SessionId, variables: Variables): Session = {
+    new Session(id, variables, None, None, LocalDateTime.now, CREATED)
   }
 }
 

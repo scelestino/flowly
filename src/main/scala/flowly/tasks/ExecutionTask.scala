@@ -25,13 +25,13 @@ import flowly.variables.{ReadableVariables, Variables}
   */
 trait ExecutionTask extends SingleTask {
 
-  def execute(sessionId:String, variables: Variables): TaskResult = try {
-    perform(sessionId, variables).fold(OnError(id, _), Continue(id, next, _))
+  def execute(sessionId: String, variables: Variables): TaskResult = try {
+    perform(sessionId, variables).fold(OnError(this, _), Continue(this, next, _))
   } catch {
-    case throwable: Throwable => OnError(id, throwable)
+    case throwable: Throwable => OnError(this, throwable)
   }
 
-  protected def perform(sessionId:String, variables: Variables): ErrorOr[Variables]
+  protected def perform(sessionId: String, variables: Variables): ErrorOr[Variables]
 
 }
 
@@ -43,7 +43,7 @@ object ExecutionTask {
 
     def next: Task = _next
 
-    def perform(sessionId:String, variables:Variables): ErrorOr[Variables] = _perform(sessionId, variables)
+    def perform(sessionId: String, variables: Variables): ErrorOr[Variables] = _perform(sessionId, variables)
 
   }
 

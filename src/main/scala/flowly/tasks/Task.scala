@@ -28,7 +28,7 @@ trait Task {
 
   def id: String
 
-  def execute(sessionId: String, variables:Variables): TaskResult
+  def execute(sessionId: String, variables: Variables): TaskResult
 
   def followedBy: List[Task]
 

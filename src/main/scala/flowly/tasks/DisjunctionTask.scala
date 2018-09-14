@@ -29,13 +29,13 @@ trait DisjunctionTask extends Task {
 
   def branches: List[(ReadableVariables => Boolean, Task)]
 
-  def execute(sessionId:String, variables: Variables): TaskResult = try {
+  def execute(sessionId: String, variables: Variables): TaskResult = try {
     next(variables) match {
-      case Some(next) => Continue(id, next, variables)
-      case None => OnError(id, DisjunctionTaskError())
+      case Some(next) => Continue(this, next, variables)
+      case None => OnError(this, DisjunctionTaskError())
     }
   } catch {
-    case throwable: Throwable => OnError(id, throwable)
+    case throwable: Throwable => OnError(this, throwable)
   }
 
   def followedBy: List[Task] = branches.collect { case (_, task) => task }

@@ -16,15 +16,21 @@
 
 package flowly
 
+import flowly.repository.model.Session
+import flowly.repository.model.Session.{SessionId, Status}
+import flowly.tasks.Task
 import flowly.variables.ReadableVariables
 
 /**
+  * Result of a Workflow execution
   *
-  *
-  * @param sessionId
-  * @param taskId
-  * @param variables
-  * @param status
+  * @param sessionId session id
+  * @param taskId    last task executed
+  * @param variables current variables
+  * @param status    session status
   */
-case class Result(sessionId: String, taskId: String, variables:ReadableVariables, status:String)
+case class Result(sessionId: SessionId, taskId: String, variables: ReadableVariables, status: Status)
 
+object Result {
+  def apply(session: Session, task: Task): Result = new Result(session.id, task.id, session.variables, session.status)
+}

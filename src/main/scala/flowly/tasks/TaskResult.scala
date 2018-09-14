@@ -21,37 +21,35 @@ import flowly.variables.Variables
 /**
   * Interface of a [[Task]] execution result
   */
-trait TaskResult {
-  def taskId: String
-}
+trait TaskResult
 
 /**
   * Current workflow execution must be continued
   *
-  * @param taskId     task id
-  * @param nextTask   next task to be executed
-  * @param variables  current variables
+  * @param currentTask task executed
+  * @param nextTask  next task to be executed
+  * @param variables current variables
   */
-case class Continue(taskId: String, nextTask: Task, variables: Variables) extends TaskResult
+case class Continue(currentTask: Task, nextTask: Task, variables: Variables) extends TaskResult
 
 /**
   * Current workflow execution has finished
   *
-  * @param taskId task id
+  * @param currentTask task id
   */
-case class Finish(taskId: String) extends TaskResult
+case class Finish(currentTask: Task) extends TaskResult
 
 /**
   * Current workflow execution cannot continue because a condition is not met
   *
-  * @param taskId task id
+  * @param currentTask task id
   */
-case class Block(taskId: String) extends TaskResult
+case class Block(currentTask: Task) extends TaskResult
 
 /**
   * There was an unexpected error during current workflow execution
   *
-  * @param taskId    task id
-  * @param throwable error
+  * @param currentTask task id
+  * @param cause  error
   */
-case class OnError(taskId: String, throwable: Throwable) extends TaskResult
+case class OnError(currentTask: Task, cause: Throwable) extends TaskResult

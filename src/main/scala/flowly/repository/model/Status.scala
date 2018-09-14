@@ -16,22 +16,24 @@
 
 package flowly.repository.model
 
+import flowly.repository.model.Session.Status
+
 /**
   * Workflow Status
   *
   */
-object WFStatus {
+object Status {
 
-  val CREATED:String = "CREATED"
+  val CREATED: Status = "CREATED"
 
-  val RUNNING:String = "RUNNING"
+  val RUNNING: Status = "RUNNING"
 
-  val ERROR:String = "ERROR"
+  val ERROR: Status = "ERROR"
 
-  val FINISHED:String = "FINISHED"
+  val FINISHED: Status = "FINISHED"
 
-  val BLOCKED:String = "BLOCKED"
+  val BLOCKED: Status = "BLOCKED"
 
-  val CANCELLED:String = "CANCELLED"
+  val CANCELLED: Status = "CANCELLED"
 
 }

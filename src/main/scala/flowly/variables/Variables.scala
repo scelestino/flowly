@@ -42,7 +42,7 @@ trait ReadableVariables {
   *
   * @param underlying variables storage
   */
-class Variables private (underlying:Map[String, Any]) extends ReadableVariables {
+class Variables private[flowly](underlying: Map[String, Any]) extends ReadableVariables {
 
   def get[T](key: Key[T]): Option[T] = underlying.get(key.identifier).asInstanceOf[Option[T]]
 
@@ -61,20 +61,14 @@ class Variables private (underlying:Map[String, Any]) extends ReadableVariables 
     *
     * @return
     */
-  private[flowly] def values:Map[String, Any] = underlying
+  private[flowly] def values: Map[String, Any] = underlying
 
   /**
     * Merge two Variables content (second overrides first one)
     *
     * @param variables another Variables object
-    * @return result between merging
+    * @return result of merging between both variables
     */
-  private[flowly] def merge(variables:Variables):Variables = Variables(underlying ++ variables.values)
-
-}
-
-object Variables {
-
-  private[flowly] def apply(underlying: Map[String, Any]): Variables = new Variables(underlying)
+  private[flowly] def merge(variables: Variables): Variables = new Variables(underlying ++ variables.values)
 
 }

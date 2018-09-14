@@ -16,10 +16,22 @@
 
 package flowly
 
+import flowly.repository.model.Session
+import flowly.repository.model.Session.SessionId
+import flowly.tasks.Task
+
+
+case class ExecutionError(sessionId: SessionId, taskId: String, cause: Throwable) extends Throwable(cause)
+
+object ExecutionError {
+  def apply(session: Session, task: Task, cause: Throwable): ExecutionError = new ExecutionError(session.id, task.id, cause)
+}
+
 
 case class TaskNotFound(taskId: String) extends Throwable
 
-case class SessionNotFound(sessionId:String) extends Throwable
+case class SessionNotFound(sessionId: SessionId) extends Throwable
+
 case class SessionCantBeExecuted(sessionId: String) extends Throwable
 
 case class DisjunctionTaskError() extends Throwable

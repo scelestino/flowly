@@ -60,7 +60,6 @@ object Main extends App {
     def initialTask: Task = Components.first
   }
 
-
   val result = for {
 
     sessionId <- workflow.init()
@@ -72,7 +71,6 @@ object Main extends App {
     result2 <- workflow.execute(sessionId, Key3 -> false)
 
   } yield result2
-
 
   result match {
     case Right(r) => println(s"THE RESULT CONTAINS ${r.variables}")
@@ -88,129 +86,3 @@ case object Key2 extends Key[Int]
 case object Key3 extends Key[Boolean]
 
 case object Key4 extends Key[Boolean]
-
-
-
-
-object Main2 extends App {
-
-  //  import org.json4s.native.Serialization.write
-  //
-  //  implicit val format = org.json4s.DefaultFormats
-  //
-  //
-  //  val ctx = new TaskContext("1", Map.empty).set(Key1, "hola").set(Key2, 123)
-  //
-  //  val r = write(ctx.variables)
-  //
-  //
-  //    val r = variables.get(Key1)
-  //
-  //  println(r)
-
-
-  trait Animal {
-    def stop(): Unit = println("stop moving")
-  }
-
-  class Dog extends Animal {
-    def bark: String = "Woof!"
-  }
-
-  trait Security {
-    this: { def stop():Unit } =>
-    def lookout: Unit = { stop(); println("looking out!") }
-  }
-
-  val goodboy: Dog = new Dog
-
-  goodboy.bark
-  // Woof!
-
-
-  val guardDog = new Dog with Security
-  guardDog.lookout
-
-
-//  class Human {
-//    def stop(): Unit = println("it stops and crosses their arms")
-//  }
-//
-//  val securityGuard = new Human with Security
-//  securityGuard.lookout
-  // it stops and crosses their arms
-  // looking out!
-
-  trait Patient {
-    this: Reader =>
-    def isQuite: Boolean = isReading
-
-    def isSlow: Boolean = true
-  }
-
-  trait Reader {
-    this: Patient =>
-    def read(): Unit = if (isSlow) println("Reading Slow...") else println("Reading Fast...")
-
-    def isReading = true
-  }
-
-  val person = new Patient with Reader
-
-
-  trait Human {
-    def isGoodForSports: Boolean
-  }
-
-  trait Programmer extends Human {
-    def readStackOverflow(): Unit = println("Reading...")
-
-    override def isGoodForSports: Boolean = false
-  }
-
-  trait Sportsman extends Human {
-    def play(): Unit = println("Playing something")
-
-    override def isGoodForSports: Boolean = true
-  }
-
-  val foo = new Programmer with Sportsman
-  println(foo.isGoodForSports)
-
-  val bar = new Sportsman with Programmer
-  println(bar.isGoodForSports)
-
-
-}
-
-//object Main2 extends App {
-//
-//  import org.json4s.scalaz.JsonScalaz._
-//  import scalaz._
-//  import Scalaz._
-//
-//  case class Person(name: String)
-//
-//  object Person {
-//
-//    implicit val json: JSON[Person] = new JSON[Person] {
-//      def write(value: Person): JValue = JString("putos")
-//
-//      def read(json: JValue): JsonScalaz.Result[Person] = Person("vamo lo pibe").successNel
-//    }
-//
-//  }
-//
-//
-//  private val value: JValue = toJSON(Person("pepito"))
-//
-//  println(value)
-//
-//
-//  private val value2: JsonScalaz.Result[Person] = fromJSON[Person](value)
-//
-//  println(value2)
-//
-//
-//}
-

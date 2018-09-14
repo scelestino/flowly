@@ -31,12 +31,12 @@ object Param {
 
   def apply[A](key: Key[A], value: A): Param = new Param(key.identifier, value)
 
-  implicit class ParamSeqOps(params: Seq[Param]) {
-    private[flowly] def toVariables: Variables = Variables(params.map(_.value).toMap)
+  implicit def tuple2Param[A](keyValue: (Key[A], A)): Param = keyValue match {
+    case (key, value) => Param(key, value)
   }
 
-  implicit def tuple2Param[A](keyValue: (Key[A], A)):Param = keyValue match {
-    case (key, value) => Param(key, value)
+  implicit class ParamSeqOps(params: Seq[Param]) {
+    private[flowly] def toVariables: Variables = new Variables(params.map(_.value).toMap)
   }
 
 }

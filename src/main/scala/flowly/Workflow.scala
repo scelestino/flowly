@@ -18,8 +18,11 @@ package flowly
 
 import flowly.repository.Repository
 import flowly.repository.model.Session
+import flowly.repository.model.Session.SessionId
 import flowly.tasks._
 import flowly.variables.{ReadableVariables, Variables}
+
+import scala.annotation.tailrec
 
 trait Workflow {
 
@@ -45,14 +48,14 @@ trait Workflow {
     * @param params    new workflow variables
     * @return execution result
     */
-  def execute(sessionId: String, params: Param*): ErrorOr[Result] = {
+  def execute(sessionId: SessionId, params: Param*): ErrorOr[Result] = {
 
     for {
 
-      // Get a Session, can be executed?
+      // Get Session, can be executed?
       currentSession <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
-      // Get current Task
+      // Get Current Task
       currentTask <- {
 
         val taskId = currentSession.lastExecution.map(_.taskId).getOrElse(initialTask.id)
@@ -64,14 +67,17 @@ trait Workflow {
       // Merge old and new Variables
       currentVariables = currentSession.variables.merge(params.toVariables)
 
-      // Execute current Task
+      // Execute from Current Task
       result <- execute(currentTask, currentSession, currentVariables)
 
     } yield result
 
   }
 
-  private def execute(task: Task, session: Session, variables:Variables): ErrorOr[Result] = {
+  private def execute(task: Task, session: Session, variables: Variables): ErrorOr[Result] = {
+
+    //repository.saveSession(session.running(task, variables)).fold
+
 
     // Update Session to Running Status
     repository.saveSession(session.running(task, variables)).flatMap { currentSession =>
@@ -79,43 +85,35 @@ trait Workflow {
       // Execute Task
       task.execute(currentSession.id, variables) match {
 
-        case Continue(taskId, next, currentVariables) =>
+        case Continue(_, next, currentVariables) =>
 
           // log?
-          println(s"$taskId continue")
+          println(s"${task.id} continue")
 
           // Execute next Task
           execute(next, currentSession, currentVariables)
 
-        case Block(taskId) =>
+        case Block(_) =>
 
           // log?
-          println(s"$taskId blocked")
+          println(s"${task.id} blocked")
 
-          // how to get result
-          repository.saveSession(currentSession.blocked(task)).map(s => {
-            Result(s.id, taskId, s.variables, s.status)
-          })
+          repository.saveSession(currentSession.blocked(task)).map(Result(_, task))
 
-        case Finish(taskId) =>
+        case Finish(_) =>
 
           // log?
-          println(s"$taskId finished")
+          println(s"${task.id} finished")
 
-          // how to get result
-          repository.saveSession(currentSession.finished(task)).map(s => {
-            Result(s.id, taskId, s.variables, s.status)
-          })
+          repository.saveSession(currentSession.finished(task)).map(Result(_, task))
 
-        case OnError(taskId, msg) =>
+        case OnError(_, cause) =>
 
           // log?
-          println(s"$taskId on error")
+          println(s"${task.id} on error")
 
-          // how to get result
-          repository.saveSession(currentSession.onError(task)).map(s => {
-            Result(s.id, taskId, s.variables, s.status)
-          })
+          repository.saveSession(currentSession.onError(task, cause)).flatMap( s => Left(ExecutionError(s, task, cause)))
+
         // TODO: tasks result can be Cancelled???
 
       }
@@ -130,7 +128,7 @@ trait Workflow {
     * @param sessionId session id
     * @return session id
     */
-  def cancel(sessionId: String, reason:String): ErrorOr[String] = {
+  def cancel(sessionId: SessionId, reason: String): ErrorOr[String] = {
 
     for {
 
@@ -163,6 +161,6 @@ trait Workflow {
     * @param sessionId session id
     * @return Variables (read only)
     */
-  def variables(sessionId: String): ErrorOr[ReadableVariables] = repository.getSession(sessionId).map(_.variables)
+  def variables(sessionId: SessionId): ErrorOr[ReadableVariables] = repository.getSession(sessionId).map(_.variables)
 
 }

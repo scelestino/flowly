@@ -29,10 +29,10 @@ trait BlockingTask extends SingleTask {
 
   def condition(variables: ReadableVariables): Boolean
 
-  def execute(sessionId:String, variables:Variables): TaskResult = try {
-    if (condition(variables)) Continue(id, next, variables) else Block(id)
+  def execute(sessionId: String, variables: Variables): TaskResult = try {
+    if (condition(variables)) Continue(this, next, variables) else Block(this)
   } catch {
-    case throwable: Throwable => OnError(id, throwable)
+    case throwable: Throwable => OnError(this, throwable)
   }
 
 }
