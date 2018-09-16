@@ -31,11 +31,11 @@ trait DisjunctionTask extends Task {
 
   def execute(sessionId: String, variables: Variables): TaskResult = try {
     next(variables) match {
-      case Some(next) => Continue(this, next, variables)
-      case None => OnError(this, DisjunctionTaskError())
+      case Some(next) => Continue(next, variables)
+      case None => OnError(DisjunctionTaskError())
     }
   } catch {
-    case throwable: Throwable => OnError(this, throwable)
+    case throwable: Throwable => OnError(throwable)
   }
 
   def followedBy: List[Task] = branches.collect { case (_, task) => task }

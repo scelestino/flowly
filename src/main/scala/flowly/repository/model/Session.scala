@@ -18,10 +18,10 @@ package flowly.repository.model
 
 import java.time.LocalDateTime
 
+import flowly.repository.model.Session.{SessionId, Status}
+import flowly.repository.model.Status._
 import flowly.tasks.Task
 import flowly.variables.Variables
-import Status._
-import flowly.repository.model.Session.{SessionId, Status}
 
 case class Session(id: SessionId, variables: Variables, lastExecution: Option[Execution], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status) {
 

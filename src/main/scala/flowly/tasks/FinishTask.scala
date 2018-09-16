@@ -29,7 +29,7 @@ import flowly.variables.Variables
   */
 case class FinishTask(id: String) extends Task {
 
-  def execute(sessionId: String, variables: Variables): TaskResult = Finish(this)
+  def execute(sessionId: String, variables: Variables): TaskResult = Finish
 
   def followedBy: List[Task] = Nil
 

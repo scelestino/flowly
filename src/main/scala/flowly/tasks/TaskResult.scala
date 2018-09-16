@@ -26,30 +26,26 @@ trait TaskResult
 /**
   * Current workflow execution must be continued
   *
-  * @param currentTask task executed
   * @param nextTask  next task to be executed
   * @param variables current variables
   */
-case class Continue(currentTask: Task, nextTask: Task, variables: Variables) extends TaskResult
+case class Continue(nextTask: Task, variables: Variables) extends TaskResult
 
 /**
   * Current workflow execution has finished
   *
-  * @param currentTask task id
   */
-case class Finish(currentTask: Task) extends TaskResult
+case object Finish extends TaskResult
 
 /**
   * Current workflow execution cannot continue because a condition is not met
   *
-  * @param currentTask task id
   */
-case class Block(currentTask: Task) extends TaskResult
+case object Block extends TaskResult
 
 /**
   * There was an unexpected error during current workflow execution
   *
-  * @param currentTask task id
   * @param cause  error
   */
-case class OnError(currentTask: Task, cause: Throwable) extends TaskResult
+case class OnError(cause: Throwable) extends TaskResult

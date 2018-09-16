@@ -16,8 +16,9 @@
 
 package flowly
 
-import flowly.variables.Key
+import flowly.events.EventHook
 import flowly.tasks._
+import flowly.variables.Key
 
 object Main extends App {
 
@@ -58,6 +59,7 @@ object Main extends App {
 
   val workflow = new Workflow {
     def initialTask: Task = Components.first
+    def eventHook: EventHook = new DummyEventHook
   }
 
   val result = for {
@@ -86,3 +88,34 @@ case object Key2 extends Key[Int]
 case object Key3 extends Key[Boolean]
 
 case object Key4 extends Key[Boolean]
+
+
+
+object Main4 extends App {
+
+//  // I can't change this code
+//  def foo:String = throw new RuntimeException("foo method fails")
+//  def bar:String = throw new RuntimeException("bar method fails")
+//
+//  // my code
+//  try {
+//    foo
+//  } catch {
+//    case error1:Throwable =>
+//      try {
+//        // if foo fails, I want to call bar
+//        bar
+//        throw new RuntimeException("my exception", error1)
+//      } catch {
+//        case error2:Throwable =>
+//          // but bar could fail too
+//          throw new RuntimeException("my exception", ???)
+//          // if my cause is error1, I lost error2 information (message and stack)
+//          // if my cause is error2, I lost error1 information (message and stack)
+//      }
+//  }
+//
+
+
+
+}

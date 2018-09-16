@@ -16,23 +16,9 @@
 
 package flowly
 
-import flowly.repository.model.Session
-import flowly.repository.model.Session.{SessionId, Status}
-import flowly.tasks.Task
-import flowly.variables.ReadableVariables
+import flowly.variables.Key
 
-/**
-  * Result of a Workflow execution
-  *
-  * @param sessionId session id
-  * @param taskId    last task executed
-  * @param variables current variables
-  * @param status    session status
-  */
-case class Result(sessionId: SessionId, taskId: String, variables: ReadableVariables, status: Status)
-
-object Result {
-
-  def apply(session: Session, task: Task): Result = new Result(session.id, task.id, session.variables, session.status)
-
-}
+case object StringKey extends Key[String]
+case object BooleanKey extends Key[Boolean]
+case object IntKey extends Key[Int]
+case object ListKey extends Key[List[String]]

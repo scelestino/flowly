@@ -30,10 +30,9 @@ class Repository {
 
   private val storage: mutable.Map[String, Session] = mutable.Map[String, Session]()
 
-  def createSession(initialVariables: Variables): ErrorOr[SessionId] = {
+  def createSession(initialVariables: Variables): ErrorOr[Session] = {
     val id = UUID.randomUUID().toString
     saveSession(Session(id, initialVariables))
-    Right(id)
   }
 
   def getSession(sessionId: SessionId): ErrorOr[Session] = {
@@ -42,7 +41,6 @@ class Repository {
 
   def saveSession(session: Session): ErrorOr[Session] = {
     storage.update(session.id, session)
-    println(s"saving session ${session.status} ${session.lastExecution}")
     Right(session)
   }
 

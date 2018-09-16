@@ -16,17 +16,19 @@
 
 package flowly
 
+import flowly.events.EventHook
 import flowly.repository.Repository
 import flowly.repository.model.Session
 import flowly.repository.model.Session.SessionId
 import flowly.tasks._
 import flowly.variables.{ReadableVariables, Variables}
 
-import scala.annotation.tailrec
 
 trait Workflow {
 
   def initialTask: Task
+
+  def eventHook: EventHook
 
   // temp
   val repository = new Repository
@@ -38,7 +40,16 @@ trait Workflow {
     * @return session id
     */
   def init(params: Param*): ErrorOr[String] = {
-    repository.createSession(params.toVariables)
+
+    repository.createSession(params.toVariables).map { session =>
+
+      // On Initialization Event
+      eventHook.onInitialization(session.id, session.variables)
+
+      session.id
+
+    }
+
   }
 
   /**
@@ -64,6 +75,9 @@ trait Workflow {
 
       }
 
+      // On Start Event
+      _ = if (currentTask == initialTask) eventHook.onStart(sessionId, currentSession.variables)
+
       // Merge old and new Variables
       currentVariables = currentSession.variables.merge(params.toVariables)
 
@@ -76,49 +90,61 @@ trait Workflow {
 
   private def execute(task: Task, session: Session, variables: Variables): ErrorOr[Result] = {
 
-    //repository.saveSession(session.running(task, variables)).fold
-
-
-    // Update Session to Running Status
-    repository.saveSession(session.running(task, variables)).flatMap { currentSession =>
+    def onSuccess(currentSession: Session): ErrorOr[Result] = {
 
       // Execute Task
       task.execute(currentSession.id, variables) match {
 
-        case Continue(_, next, currentVariables) =>
+        case Continue(next, currentVariables) =>
 
-          // log?
-          println(s"${task.id} continue")
+          // On Execution Event
+          eventHook.onExecution(session.id, currentVariables, task.id)
 
           // Execute next Task
           execute(next, currentSession, currentVariables)
 
-        case Block(_) =>
+        case Block =>
 
-          // log?
-          println(s"${task.id} blocked")
+          repository.saveSession(currentSession.blocked(task)).fold(onFailure, { session =>
 
-          repository.saveSession(currentSession.blocked(task)).map(Result(_, task))
+            // On Block Event
+            eventHook.onBlocked(session.id, session.variables, task.id)
 
-        case Finish(_) =>
+            Right(Result(session, task))
 
-          // log?
-          println(s"${task.id} finished")
+          })
 
-          repository.saveSession(currentSession.finished(task)).map(Result(_, task))
+        case Finish =>
 
-        case OnError(_, cause) =>
+          repository.saveSession(currentSession.finished(task)).fold(onFailure, { session =>
 
-          // log?
-          println(s"${task.id} on error")
+            // On Finish Event
+            eventHook.onFinish(session.id, session.variables, task.id)
 
-          repository.saveSession(currentSession.onError(task, cause)).flatMap( s => Left(ExecutionError(s, task, cause)))
+            Right(Result(session, task))
 
-        // TODO: tasks result can be Cancelled???
+          })
+
+        case OnError(cause) =>
+
+          // TODO: if repo fails I lost original cause
+          repository.saveSession(currentSession.onError(task, cause)).fold(onFailure, { session =>
+
+            // On Error Event
+            eventHook.onError(session.id, session.variables, task.id, cause)
+
+            Left(ExecutionError(session, task, cause))
+
+          })
 
       }
 
     }
+
+    def onFailure(cause: Throwable): ErrorOr[Result] = Left(ExecutionError(session, task, cause))
+
+    // Update Session to Running Status and execute it
+    repository.saveSession(session.running(task, variables)).fold(onFailure, onSuccess)
 
   }
 
@@ -136,10 +162,20 @@ trait Workflow {
 
       result <- repository.saveSession(session.cancelled(reason))
 
+      // On Cancellation Event
+      _ = eventHook.onCancellation(sessionId, reason, session.variables, session.lastExecution.map(_.taskId))
+
     } yield result
 
   }.map(_.id)
 
+  /**
+    * It returns Variables for a given session id
+    *
+    * @param sessionId session id
+    * @return Variables (read only)
+    */
+  def variables(sessionId: SessionId): ErrorOr[ReadableVariables] = repository.getSession(sessionId).map(_.variables)
 
   /**
     * It returns a list of every [[Task]] in this workflow
@@ -154,13 +190,5 @@ trait Workflow {
 
     tasks(initialTask, Nil)
   }
-
-  /**
-    * It returns Variables for a given session id
-    *
-    * @param sessionId session id
-    * @return Variables (read only)
-    */
-  def variables(sessionId: SessionId): ErrorOr[ReadableVariables] = repository.getSession(sessionId).map(_.variables)
 
 }
