@@ -16,45 +16,45 @@
 
 package flowly.tasks
 
-import flowly.{BooleanKey, Param, StringKey}
+import flowly.StringKey
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 
-class BlockingTaskSpec extends Specification {
 
-  "BlockingTask" should {
+case class TestException(message:String) extends Throwable
 
-    "block execution if condition is false" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(BooleanKey))
-      task.execute("session1", variables) must_== Block
-    }
+class ExecutionTaskSpec extends Specification {
 
-    "continue execution if condition is true" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey))
+  "ExecutionTask" should {
+
+    "continue if execution was successful" in new Context {
+      val task = ExecutionTask("1", FinishTask("2")) { case (_, v) => Right(v) }
       task.execute("session1", variables) must haveClass[Continue]
     }
 
-    "after a continue variables must be the same" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey))
+    "after a continue variables can change" in new Context {
+      val task = ExecutionTask("1", FinishTask("2")) { case (_, v) => Right(v.set(StringKey, "value2")) }
       task.execute("session1", variables) match {
-        case Continue(_, v) => v must_=== variables
+        case Continue(_, v) => v.get(StringKey) must beSome("value2")
         case otherwise => failure(s"$otherwise must be Continue")
       }
     }
 
     "after a continue next task must be correct" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey))
+      val task = ExecutionTask("1", FinishTask("2")) { case (_, v) => Right(v) }
       task.execute("session1", variables) match {
         case Continue(nextTask, _) => nextTask must_=== task.next
         case otherwise => failure(s"$otherwise must be Continue")
       }
     }
 
+    "error if execution was unsuccessful" in new Context {
+      val task = ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
+      task.execute("session1", variables) match {
+        case OnError(TestException(message)) => message must_== "execution error"
+        case otherwise => failure(s"$otherwise must be OnError")
+      }
+    }
+
   }
 
 }
-
-trait Context extends Scope {
-  val variables = Seq[Param](StringKey -> "value1").toVariables
-}
-
