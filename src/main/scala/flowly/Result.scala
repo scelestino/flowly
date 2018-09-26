@@ -33,6 +33,6 @@ case class Result(sessionId: SessionId, taskId: String, variables: ReadableVaria
 
 object Result {
 
-  def apply(session: Session, task: Task): Result = new Result(session.id, task.id, session.variables, session.status)
+  def apply(session: Session, task: Task): Result = Result(session.id, task.id, session.variables, session.status)
 
 }

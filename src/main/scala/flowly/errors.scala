@@ -20,6 +20,7 @@ import flowly.repository.model.Session
 import flowly.repository.model.Session.SessionId
 import flowly.tasks.Task
 
+// DRAFT
 
 case class ExecutionError(sessionId: SessionId, taskId: String, cause: Throwable) extends Throwable(cause)
 

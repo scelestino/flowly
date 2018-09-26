@@ -16,19 +16,9 @@
 
 package flowly
 
-import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
-
 import flowly.events.EventHook
 import flowly.tasks._
 import flowly.variables.Key
-
-import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
-import scala.io.StdIn
-import scala.util.Try
 
 object Main extends App {
 
@@ -72,11 +62,12 @@ object Main extends App {
     def eventHook: EventHook = new DummyEventHook
   }
 
+  // create and execute a workflow
   val result = for {
 
     sessionId <- workflow.init()
 
-    result <- workflow.execute(sessionId)
+    result <- workflow.execute(sessionId) // blocked
 
     _ = println(s"the result is $result\n")
 

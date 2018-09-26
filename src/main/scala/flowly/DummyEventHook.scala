@@ -30,11 +30,11 @@ class DummyEventHook extends EventHook {
     println(s"session $sessionId just started")
   }
 
-  def onExecution(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = {
-    println(s"session $sessionId task $currentTask executed")
+  def onContinue(sessionId: SessionId, variables: ReadableVariables, currentTask: String, nextTask:String): Unit = {
+    println(s"session $sessionId task $currentTask executed, next $nextTask")
   }
 
-  def onBlocked(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = {
+  def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = {
     println(s"session $sessionId task $currentTask blocked")
   }
 

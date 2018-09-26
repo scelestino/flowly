@@ -42,6 +42,14 @@ class DisjunctionTaskSpec extends Specification {
       task.execute("session1", variables) must_== OnError(DisjunctionTaskError())
     }
 
+    "error if execution was unsuccessful" in new Context {
+      val task = DisjunctionTask("1", (_ => throw TestException("execution error"), FinishTask("2")))
+      task.execute("session1", variables) match {
+        case OnError(TestException(message)) => message must_== "execution error"
+        case otherwise => failure(s"$otherwise must be OnError")
+      }
+    }
+
   }
 
 }

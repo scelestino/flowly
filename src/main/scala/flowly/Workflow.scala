@@ -23,6 +23,8 @@ import flowly.repository.model.Session.SessionId
 import flowly.tasks._
 import flowly.variables.{ReadableVariables, Variables}
 
+import scala.annotation.tailrec
+
 
 trait Workflow {
 
@@ -97,8 +99,8 @@ trait Workflow {
 
         case Continue(next, currentVariables) =>
 
-          // On Execution Event
-          eventHook.onExecution(session.id, currentVariables, task.id)
+          // On Continue Event
+          eventHook.onContinue(session.id, currentVariables, task.id, next.id)
 
           // Execute next Task
           execute(next, currentSession, currentVariables)
@@ -108,7 +110,7 @@ trait Workflow {
           repository.saveSession(currentSession.blocked(task)).fold(onFailure, { session =>
 
             // On Block Event
-            eventHook.onBlocked(session.id, session.variables, task.id)
+            eventHook.onBlock(session.id, session.variables, task.id)
 
             Right(Result(session, task))
 

@@ -50,6 +50,14 @@ class BlockingTaskSpec extends Specification {
       }
     }
 
+    "error if execution was unsuccessful" in new Context {
+      val task = BlockingTask("1", FinishTask("2"), _ => throw TestException("execution error"))
+      task.execute("session1", variables) match {
+        case OnError(TestException(message)) => message must_== "execution error"
+        case otherwise => failure(s"$otherwise must be OnError")
+      }
+    }
+
   }
 
 }

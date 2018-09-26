@@ -18,6 +18,8 @@ package flowly
 
 import flowly.variables.{Key, Variables}
 
+import scala.language.implicitConversions
+
 /**
   * Object used to ensure the relationship between keys and values at variable arguments methods
   *

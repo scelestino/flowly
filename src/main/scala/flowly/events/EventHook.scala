@@ -20,7 +20,7 @@ import flowly.repository.model.Session.SessionId
 import flowly.variables.ReadableVariables
 
 /**
-  * Interface for
+  * Interface for event handling (can be used for logging purpose)
   */
 trait EventHook {
 
@@ -28,9 +28,9 @@ trait EventHook {
 
   def onStart(sessionId:SessionId, variables: ReadableVariables):Unit
 
-  def onExecution(sessionId: SessionId, variables: ReadableVariables, currentTask:String):Unit
+  def onContinue(sessionId: SessionId, variables: ReadableVariables, currentTask:String, nextTask:String):Unit
 
-  def onBlocked(sessionId: SessionId, variables: ReadableVariables, currentTask:String):Unit
+  def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask:String):Unit
 
   def onFinish(sessionId: SessionId, variables: ReadableVariables, currentTask:String):Unit
 
