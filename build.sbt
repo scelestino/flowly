@@ -1,18 +1,35 @@
 
 lazy val root = (project in file(".")).
   settings(
+    name := "flowly",
     inThisBuild(List(
       scalaVersion := "2.12.6",
       version      := "0.1.0-SNAPSHOT"
-    )),
+    ))
+  )
+  .aggregate(`flowly-core`, `flowly-mongodb`)
+
+lazy val `flowly-core` = project
+  .settings(
     name := "flowly-core",
     libraryDependencies ++= Seq(
-//      "org.scalatest" %% "scalatest"      % "3.0.5",
+      //      "org.scalatest" %% "scalatest"      % "3.0.5",
       "org.specs2" %% "specs2-core" % "4.3.4" % "test",
-      "org.json4s"    %% "json4s-native"  % "3.6.0",
-      "org.json4s"    %% "json4s-scalaz"  % "3.6.0",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.8",
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.8",
+//      "org.json4s"    %% "json4s-native"  % "3.6.0",
+//      "org.json4s"    %% "json4s-scalaz"  % "3.6.0",
       "org.typelevel" %% "cats-core" % "1.3.1"
     )
   )
+
+lazy val `flowly-mongodb` = project.
+  settings(
+    name := "flowly-mongodb",
+    libraryDependencies ++= Seq(
+      "org.mongojack" % "mongojack" % "2.9.4"
+    )
+  )
+  .dependsOn(`flowly-core`)
 
 scalacOptions in Test ++= Seq("-Yrangepos")
