@@ -16,7 +16,7 @@
 
 package flowly.core.tasks
 
-import flowly.core.variables.{ReadableVariables, Variables}
+import flowly.core.variables.{Key, ReadableVariables, Variables}
 
 
 /**
@@ -27,9 +27,9 @@ import flowly.core.variables.{ReadableVariables, Variables}
   */
 trait BlockingTask extends SingleTask {
 
-  def condition(variables: ReadableVariables): Boolean
+  protected def condition(variables: ReadableVariables): Boolean
 
-  def execute(sessionId: String, variables: Variables): TaskResult = try {
+  final private[flowly] def execute(sessionId: String, variables: Variables): TaskResult = try {
     if (condition(variables)) Continue(next, variables) else Block
   } catch {
     case throwable: Throwable => OnError(throwable)
@@ -39,7 +39,7 @@ trait BlockingTask extends SingleTask {
 
 object BlockingTask {
 
-  def apply(_id: String, _next: Task, _condition: ReadableVariables => Boolean): BlockingTask = new BlockingTask {
+  def apply(_id: String, _next: Task, _condition: ReadableVariables => Boolean, _allowedKeys: List[Key[_]]): BlockingTask = new BlockingTask {
 
     def id: String = _id
 
@@ -47,6 +47,7 @@ object BlockingTask {
 
     def condition(variables: ReadableVariables): Boolean = _condition(variables)
 
+    override protected def allowedKeys: List[Key[_]] = _allowedKeys
   }
 
 }

@@ -19,6 +19,7 @@ package flowly.core
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.Task
+import flowly.core.variables.Key
 
 // DRAFT
 
@@ -33,6 +34,8 @@ case class TaskNotFound(taskId: String) extends Throwable
 case class SessionNotFound(sessionId: SessionId) extends Throwable
 
 case class SessionCantBeExecuted(sessionId: String) extends Throwable
+
+case class ParamsNotAllowed(sessionId: String, allowedKeys: List[String], receivedParams: List[Param]) extends Throwable
 
 case class RepositoryError()
 

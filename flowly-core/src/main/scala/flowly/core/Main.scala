@@ -33,7 +33,7 @@ object Main extends App {
 
   trait BlockingComponent {
     this: Finish1Component =>
-    lazy val blocking = BlockingTask("BLOCKING", finish, _.contains(Key3))
+    lazy val blocking = BlockingTask("BLOCKING", finish, _.contains(Key3), List(Key3))
   }
 
   trait SecondComponent {
@@ -44,19 +44,24 @@ object Main extends App {
     }
   }
 
+  trait BlockingDisjunctionComponent {
+    this: Finish2Component with DisjunctionComponent =>
+    lazy val blockingDisjunction: Task = BlockingDisjunctionTask("Disjunction", List(Key5, Key6), (_.contains(Key5), disjunction), (_.contains(Key6), finish2))
+  }
+
   trait DisjunctionComponent {
     this: Finish2Component with SecondComponent =>
     lazy val disjunction: Task = DisjunctionTask("Disjunction", finish2, second, _.contains(Key4))
   }
 
   trait FirstComponent {
-    this: DisjunctionComponent =>
-    lazy val first: Task = ExecutionTask("EXECUTING 1", disjunction) { (sessionId, variables) =>
+    this: BlockingDisjunctionComponent =>
+    lazy val first: Task = ExecutionTask("EXECUTING 1", blockingDisjunction) { (sessionId, variables) =>
       Right(variables.set(Key1, "foo bar baz"))
     }
   }
 
-  object Components extends FirstComponent with SecondComponent with DisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component
+  object Components extends FirstComponent with SecondComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component
 
   val workflow = new Workflow {
     def initialTask: Task = Components.first
@@ -73,12 +78,18 @@ object Main extends App {
 
     _ = println(s"the result is $result\n")
 
-    result2 <- workflow.execute(sessionId, Key3 -> false)
+    result2 <- workflow.execute(sessionId)
 
-  } yield result2
+    _ = println(s"the result is $result2\n")
+
+    result4 <- workflow.execute(sessionId, Key3 -> true)//FakeKey -> Test("a",1))
+
+  } yield result4
 
   result match {
-    case Right(r) => println(s"THE RESULT CONTAINS ${r.variables}")
+
+    case Right(r) => val v: Boolean = r.variables.get(Key3).get
+                     println(s"THE RESULT CONTAINS ${r.variables}")
     case Left(ex) => println(ex)
   }
 
@@ -88,3 +99,10 @@ case object Key1 extends Key[String]
 case object Key2 extends Key[Int]
 case object Key3 extends Key[Boolean]
 case object Key4 extends Key[Boolean]
+case object Key5 extends Key[Int]
+case object Key6 extends Key[Int]
+/*case object FakeKey extends Key[Test] {
+  override def identifier = "Key3"
+}
+
+case class Test(a: String, b: Int)*/

@@ -26,17 +26,17 @@ class BlockingTaskSpec extends Specification {
   "BlockingTask" should {
 
     "block execution if condition is false" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(BooleanKey))
+      val task = BlockingTask("1", FinishTask("2"), _.contains(BooleanKey), List(StringKey))
       task.execute("session1", variables) must_== Block
     }
 
     "continue execution if condition is true" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey))
+      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey), List(StringKey))
       task.execute("session1", variables) must haveClass[Continue]
     }
 
     "after a continue variables must be the same" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey))
+      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey), List(StringKey))
       task.execute("session1", variables) match {
         case Continue(_, v) => v must_=== variables
         case otherwise => failure(s"$otherwise must be Continue")
@@ -44,7 +44,7 @@ class BlockingTaskSpec extends Specification {
     }
 
     "after a continue next task must be correct" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey))
+      val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey), List(StringKey))
       task.execute("session1", variables) match {
         case Continue(nextTask, _) => nextTask must_=== task.next
         case otherwise => failure(s"$otherwise must be Continue")
@@ -52,7 +52,7 @@ class BlockingTaskSpec extends Specification {
     }
 
     "error if execution was unsuccessful" in new Context {
-      val task = BlockingTask("1", FinishTask("2"), _ => throw TestException("execution error"))
+      val task = BlockingTask("1", FinishTask("2"), _ => throw TestException("execution error"), List(StringKey))
       task.execute("session1", variables) match {
         case OnError(TestException(message)) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")

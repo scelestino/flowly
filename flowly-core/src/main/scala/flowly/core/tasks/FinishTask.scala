@@ -16,7 +16,7 @@
 
 package flowly.core.tasks
 
-import flowly.core.variables.Variables
+import flowly.core.variables.{Key, Variables}
 
 /**
   * An instance of this [[Task]] is need be to used to finish a workflow execution.
@@ -29,8 +29,10 @@ import flowly.core.variables.Variables
   */
 case class FinishTask(id: String) extends Task {
 
-  def execute(sessionId: String, variables: Variables): TaskResult = Finish
+  final private[flowly] def execute(sessionId: String, variables: Variables): TaskResult = Finish
 
-  def followedBy: List[Task] = Nil
+  final private[flowly] def followedBy: List[Task] = Nil
+
+  override protected def allowedKeys: List[Key[_]] = List.empty
 
 }

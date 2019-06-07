@@ -34,6 +34,10 @@ class DummyEventHook extends EventHook {
     println(s"session $sessionId task $currentTask executed, next $nextTask")
   }
 
+  def onSkip(sessionId: SessionId, variables: ReadableVariables, currentTask: String, nextTask: String): Unit = {
+    println(s"session $sessionId task $currentTask skipped, next $nextTask")
+  }
+
   def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = {
     println(s"session $sessionId task $currentTask blocked")
   }

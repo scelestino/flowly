@@ -17,7 +17,7 @@
 package flowly.core.tasks
 
 import flowly.core.ErrorOr
-import flowly.core.variables.Variables
+import flowly.core.variables.{Key, Variables}
 
 /**
   * An instance of this [[Task]] will execute your code and can change the execution context.
@@ -25,13 +25,15 @@ import flowly.core.variables.Variables
   */
 trait ExecutionTask extends SingleTask {
 
-  def execute(sessionId: String, variables: Variables): TaskResult = try {
+  final private[flowly] def execute(sessionId: String, variables: Variables): TaskResult = try {
     perform(sessionId, variables).fold(OnError, Continue(next, _))
   } catch {
     case throwable: Throwable => OnError(throwable)
   }
 
   protected def perform(sessionId: String, variables: Variables): ErrorOr[Variables]
+
+  override protected def allowedKeys: List[Key[_]] = List.empty
 
 }
 

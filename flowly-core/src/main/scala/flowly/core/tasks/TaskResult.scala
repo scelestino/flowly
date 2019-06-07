@@ -32,6 +32,14 @@ trait TaskResult
 case class Continue(nextTask: Task, variables: Variables) extends TaskResult
 
 /**
+  * Current workflow execution must be continued but current task was skipped
+  *
+  * @param nextTask  next task to be executed
+  * @param variables current variables
+  */
+case class SkipAndContinue(nextTask: Task, variables: Variables) extends TaskResult
+
+/**
   * Current workflow execution has finished
   *
   */

@@ -24,18 +24,20 @@ import flowly.core.variables.ReadableVariables
   */
 trait EventHook {
 
-  def onInitialization(sessionId:SessionId, variables: ReadableVariables):Unit
+  def onInitialization(sessionId:SessionId, variables: ReadableVariables): Unit
 
-  def onStart(sessionId:SessionId, variables: ReadableVariables):Unit
+  def onStart(sessionId:SessionId, variables: ReadableVariables): Unit
 
-  def onContinue(sessionId: SessionId, variables: ReadableVariables, currentTask:String, nextTask:String):Unit
+  def onContinue(sessionId: SessionId, variables: ReadableVariables, currentTask:String, nextTask:String): Unit
 
-  def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask:String):Unit
+  def onSkip(sessionId: SessionId, variables: ReadableVariables, currentTask:String, nextTask:String): Unit
 
-  def onFinish(sessionId: SessionId, variables: ReadableVariables, currentTask:String):Unit
+  def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask:String): Unit
 
-  def onError(sessionId: SessionId, variables: ReadableVariables, currentTask:String, cause:Throwable):Unit
+  def onFinish(sessionId: SessionId, variables: ReadableVariables, currentTask:String): Unit
 
-  def onCancellation(sessionId:SessionId, reason:String, variables:ReadableVariables, currentTask:Option[String]):Unit
+  def onError(sessionId: SessionId, variables: ReadableVariables, currentTask:String, cause:Throwable): Unit
+
+  def onCancellation(sessionId:SessionId, reason:String, variables:ReadableVariables, currentTask:Option[String]): Unit
 
 }

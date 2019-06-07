@@ -17,19 +17,20 @@
 package flowly.core.variables
 
 import flowly.core.tasks._
+import scala.reflect.runtime.universe.TypeTag
 
 /**
   * Read-only interface of Variables
   */
 trait ReadableVariables {
 
-  def get[T](key: Key[T]): Option[T]
+  def get[T: TypeTag](key: Key[T]): Option[T]
 
-  def getOrElse[T](key: Key[T], orElse: => T): T
+  def getOrElse[T: TypeTag](key: Key[T], orElse: => T): T
 
   def contains(key: Key[_]): Boolean
 
-  def exists[T](key: Key[T], f: T => Boolean): Boolean
+  def exists[T: TypeTag](key: Key[T], f: T => Boolean): Boolean
 
 }
 
@@ -44,15 +45,15 @@ trait ReadableVariables {
   */
 class Variables private[flowly](underlying: Map[String, Any]) extends ReadableVariables {
 
-  def get[T](key: Key[T]): Option[T] = underlying.get(key.identifier).asInstanceOf[Option[T]]
+  def get[T: TypeTag](key: Key[T]): Option[T] = underlying.get(key.identifier).map(_.asInstanceOf[T])
 
-  def getOrElse[T](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
+  def getOrElse[T: TypeTag](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
 
   def contains(key: Key[_]): Boolean = underlying.contains(key.identifier)
 
-  def exists[T](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
+  def exists[T: TypeTag](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
 
-  def set[T](key: Key[T], value: T): Variables = new Variables(underlying.updated(key.identifier, value))
+  def set[T: TypeTag](key: Key[T], value: T): Variables = new Variables(underlying.updated(key.identifier, value))
 
   def unset(key: Key[_]): Variables = new Variables(underlying.filterKeys(_ != key.identifier))
 

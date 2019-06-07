@@ -27,6 +27,8 @@ class BaseEventHook extends EventHook {
 
   def onContinue(sessionId: SessionId, variables: ReadableVariables, currentTask: String, nextTask:String): Unit = ()
 
+  def onSkip(sessionId: SessionId, variables: ReadableVariables, currentTask: String, nextTask: String): Unit = ()
+
   def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = ()
 
   def onFinish(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = ()
@@ -34,5 +36,4 @@ class BaseEventHook extends EventHook {
   def onError(sessionId: SessionId, variables: ReadableVariables, currentTask: String, cause:Throwable): Unit = ()
 
   def onCancellation(sessionId: SessionId, reason: String, variables: ReadableVariables, currentTask: Option[String]): Unit = ()
-
 }

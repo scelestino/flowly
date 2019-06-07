@@ -22,8 +22,8 @@ package flowly.core.tasks
   */
 trait SingleTask extends Task {
 
-  def next: Task
+  protected def next: Task
 
-  def followedBy: List[Task] = next :: Nil
+  private[flowly] def followedBy: List[Task] = next :: Nil
 
 }

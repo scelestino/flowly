@@ -58,33 +58,36 @@ trait Workflow {
     * @param params    new workflow variables
     * @return execution result
     */
-  def execute(sessionId: SessionId, params: Param*): ErrorOr[Result] = {
+  def execute(sessionId: SessionId, params: Param*): ErrorOr[Result] = for {
 
-    for {
+    // Get Session, can be executed?
+    currentSession <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
-      // Get Session, can be executed?
-      currentSession <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
+    // Get Current Task
+    currentTask <- {
 
-      // Get Current Task
-      currentTask <- {
+      val taskId = currentSession.lastExecution.map(_.taskId).getOrElse(initialTask.id)
 
-        val taskId = currentSession.lastExecution.map(_.taskId).getOrElse(initialTask.id)
+      tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
 
-        tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
+    }
 
-      }
+    //Are params allowed?
+    _ <- validateParamsForTask(sessionId, currentTask, params.toList)
 
-      // On Start Event
-      _ = if (currentTask == initialTask) eventHook.onStart(sessionId, currentSession.variables)
+    // On Start Event
+    _ = if (currentTask == initialTask) eventHook.onStart(sessionId, currentSession.variables)
 
-      // Merge old and new Variables
-      currentVariables = currentSession.variables.merge(params.toVariables)
+    // Merge old and new Variables
+    currentVariables = currentSession.variables.merge(params.toVariables)
 
-      // Execute from Current Task
-      result <- execute(currentTask, currentSession, currentVariables)
+    // Execute from Current Task
+    result <- execute(currentTask, currentSession, currentVariables)
 
-    } yield result
+  } yield result
 
+  private def validateParamsForTask(sessionId: String, task: Task, params: List[Param]): ErrorOr[Unit] = {
+    if(task.accept(params)) Right() else Left(ParamsNotAllowed(sessionId, task.allowedKeys.map(_.identifier), params))
   }
 
   private def execute(task: Task, session: Session, variables: Variables): ErrorOr[Result] = {

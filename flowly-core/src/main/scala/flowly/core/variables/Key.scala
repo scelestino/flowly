@@ -16,6 +16,7 @@
 
 package flowly.core.variables
 
+import scala.reflect.ClassTag
 
 /**
   * Interface used to get access to objects inside [[Variables]], it creates a relation
@@ -33,7 +34,11 @@ package flowly.core.variables
   *
   * @tparam A what kind of object can be used with this key
   */
-trait Key[A] {
+abstract class Key[A: ClassTag]() {
   this: Product =>
-  def identifier: String = this.toString
+
+  final def identifier: String = this.toString
+
+  private[flowly] def allowedType(value: Any): Boolean = implicitly[ClassTag[A]].runtimeClass.isInstance(value)
+
 }

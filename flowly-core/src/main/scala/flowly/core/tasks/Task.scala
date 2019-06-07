@@ -16,7 +16,8 @@
 
 package flowly.core.tasks
 
-import flowly.core.variables.Variables
+import flowly.core.Param
+import flowly.core.variables.{Key, Variables}
 
 /**
   * [[Task]] is something to do inside a workflow
@@ -28,9 +29,26 @@ trait Task {
 
   def id: String
 
-  def execute(sessionId: String, variables: Variables): TaskResult
+  /**
+    * Perform a single step inside the workflow. It depends on the task implementation
+    */
+  private[flowly] def execute(sessionId: String, variables: Variables): TaskResult
 
-  def followedBy: List[Task]
+  /**
+    * Check if all the keys are allowed by this task
+    */
+  final private[flowly] def accept(params: List[Param]): Boolean = params.forall{case Param(key, value) => allowedKeys.exists( k => k.identifier.contains(key) && k.allowedType(value))}
+
+  /**
+    * A list of tasks that follows this task
+    */
+  private[flowly] def followedBy: List[Task]
+
+  /**
+    * A list of keys allowed by this task. It means that a session on this task can be
+    * executed with these keys
+    */
+  protected def allowedKeys: List[Key[_]]
 
   override def toString: String = s"Task:$id"
 
