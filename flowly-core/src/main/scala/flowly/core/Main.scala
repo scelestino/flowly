@@ -18,11 +18,11 @@ package flowly.core
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
-import flowly.core.events.EventListener
 import flowly.core.repository.InMemoryRepository
 import flowly.core.serialization.Serializer
 import flowly.core.tasks._
 import flowly.core.variables.{ExecutionContextFactory, Key}
+import scala.reflect.runtime.universe._
 
 object Main extends App {
 

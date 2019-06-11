@@ -22,7 +22,7 @@ import flowly.core.variables.ReadableExecutionContext
 
 class DummyEventListener extends EventListener {
 
-  def onInitialization(sessionId: SessionId, variables: ReadableExecutionContext): Unit = {
+  def onInitialization(sessionId: SessionId, vars: Map[String, Any]): Unit = {
     println(s"Init a new instance $sessionId")
   }
 
@@ -53,5 +53,4 @@ class DummyEventListener extends EventListener {
   def onCancellation(sessionId: SessionId, reason: String, variables: ReadableExecutionContext, currentTask: Option[String]): Unit = {
     println(s"session $sessionId was cancelled in task $currentTask")
   }
-
 }

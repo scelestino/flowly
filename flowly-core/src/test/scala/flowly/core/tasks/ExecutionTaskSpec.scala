@@ -28,12 +28,12 @@ class ExecutionTaskSpec extends Specification {
 
     "continue if execution was successful" in new Context {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, v) => Right(v) }
-      task.execute("session1", variables) must haveClass[Continue]
+      task.execute("session1", ec) must haveClass[Continue]
     }
 
     "after a continue variables can change" in new Context {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, v) => Right(v.set(StringKey, "value2")) }
-      task.execute("session1", variables) match {
+      task.execute("session1", ec) match {
         case Continue(_, v) => v.get(StringKey) must beSome("value2")
         case otherwise => failure(s"$otherwise must be Continue")
       }
@@ -41,7 +41,7 @@ class ExecutionTaskSpec extends Specification {
 
     "after a continue next task must be correct" in new Context {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, v) => Right(v) }
-      task.execute("session1", variables) match {
+      task.execute("session1", ec) match {
         case Continue(nextTask, _) => nextTask must_=== task.next
         case otherwise => failure(s"$otherwise must be Continue")
       }
@@ -49,7 +49,7 @@ class ExecutionTaskSpec extends Specification {
 
     "error if execution was unsuccessful" in new Context {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
-      task.execute("session1", variables) match {
+      task.execute("session1", ec) match {
         case OnError(TestException(message)) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
       }

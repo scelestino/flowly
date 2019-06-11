@@ -26,13 +26,13 @@ class DisjunctionTaskSpec extends Specification {
 
     "continue if execution was successful" in new Context {
       val task = DisjunctionTask("1", FinishTask("2"), FinishTask("3"), _.contains(StringKey))
-      task.execute("session1", variables) must haveClass[Continue]
+      task.execute("session1", ec) must haveClass[Continue]
     }
 
     "after a continue next task must be correct" in new Context {
       val ifTrue = FinishTask("2")
       val task = DisjunctionTask("1", ifTrue, FinishTask("3"), _.contains(StringKey))
-      task.execute("session1", variables) match {
+      task.execute("session1", ec) match {
         case Continue(nextTask, _) => nextTask must_=== ifTrue
         case otherwise => failure(s"$otherwise must be Continue")
       }
@@ -40,12 +40,12 @@ class DisjunctionTaskSpec extends Specification {
 
     "error if there no valid condition" in new Context {
       val task = DisjunctionTask("1", (_.contains(IntKey), FinishTask("2")))
-      task.execute("session1", variables) must_== OnError(DisjunctionTaskError())
+      task.execute("session1", ec) must_== OnError(DisjunctionTaskError())
     }
 
     "error if execution was unsuccessful" in new Context {
       val task = DisjunctionTask("1", (_ => throw TestException("execution error"), FinishTask("2")))
-      task.execute("session1", variables) match {
+      task.execute("session1", ec) match {
         case OnError(TestException(message)) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
       }
