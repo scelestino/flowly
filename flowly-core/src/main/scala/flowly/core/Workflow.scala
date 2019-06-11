@@ -21,7 +21,7 @@ import flowly.core.repository.Repository
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks._
-import flowly.core.variables.{ExecutionContext, ExecutionContextFactory}
+import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
 
 
 trait Workflow {
@@ -73,8 +73,9 @@ trait Workflow {
 
     executionContext = executionContextFactory.create(currentSession)
 
-    // On Start Event
+    // On Start or Resume Event
     _ = if (currentTask == initialTask) eventListeners.foreach(_.onStart(sessionId, executionContext))
+        else eventListeners.foreach(_.onResume(sessionId, executionContext))
 
     // Merge old and new Variables
     currentExecutionContext = executionContext.merge(params.toVariables)

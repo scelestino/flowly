@@ -22,12 +22,16 @@ import flowly.core.variables.ReadableExecutionContext
 
 class DummyEventListener extends EventListener {
 
-  def onInitialization(sessionId: SessionId, variables: ReadableExecutionContext): Unit = {
+  def onInitialization(sessionId: SessionId, vars: Map[String, Any]): Unit = {
     println(s"Init a new instance $sessionId")
   }
 
   def onStart(sessionId: SessionId, variables: ReadableExecutionContext): Unit = {
     println(s"session $sessionId just started")
+  }
+
+  def onResume(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit = {
+    println(s"session $sessionId has been resumed")
   }
 
   def onContinue(sessionId: SessionId, variables: ReadableExecutionContext, currentTask: String, nextTask:String): Unit = {

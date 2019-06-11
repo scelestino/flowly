@@ -25,6 +25,8 @@ class BaseEventListener extends EventListener {
 
   def onStart(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit = ()
 
+  def onResume(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit = ()
+
   def onContinue(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, nextTask:String): Unit = ()
 
   def onSkip(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, nextTask: String): Unit = ()

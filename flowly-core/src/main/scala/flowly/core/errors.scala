@@ -19,7 +19,6 @@ package flowly.core
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.Task
-import flowly.core.variables.Key
 
 // DRAFT
 
