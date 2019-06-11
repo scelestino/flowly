@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package flowly.core
-
 import flowly.core.events.EventHook
 import flowly.core.repository.InMemoryRepository
 import flowly.core.tasks._
 import flowly.core.variables.Key
+import flowly.core.{DummyEventHook, Workflow}
 
 object Main extends App {
 

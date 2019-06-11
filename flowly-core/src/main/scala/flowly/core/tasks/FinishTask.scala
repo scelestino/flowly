@@ -33,6 +33,6 @@ case class FinishTask(id: String) extends Task {
 
   final private[flowly] def followedBy: List[Task] = Nil
 
-  override protected def allowedKeys: List[Key[_]] = List.empty
+  override def allowedKeys: List[Key[_]] = List.empty
 
 }

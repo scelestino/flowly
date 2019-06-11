@@ -9,7 +9,7 @@ trait ConditionalTask extends SingleTask {
 
   protected def perform(sessionId: String, variables: Variables): ErrorOr[Variables]
 
-  override protected def allowedKeys: List[Key[_]] = List.empty
+  override def allowedKeys: List[Key[_]] = List.empty
 
   final private[flowly] def execute(sessionId: String, variables: Variables): TaskResult = try {
       if(condition(variables)) perform(sessionId, variables).fold(OnError, Continue(next, _))
@@ -31,6 +31,6 @@ object ConditionalTask {
 
     def perform(sessionId: String, variables: Variables): ErrorOr[Variables] = _perform(sessionId, variables)
 
-    override protected def allowedKeys: List[Key[_]] = _allowedKeys
+    override def allowedKeys: List[Key[_]] = _allowedKeys
   }
 }

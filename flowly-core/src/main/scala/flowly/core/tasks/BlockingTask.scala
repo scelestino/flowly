@@ -47,7 +47,7 @@ object BlockingTask {
 
     def condition(variables: ReadableVariables): Boolean = _condition(variables)
 
-    override protected def allowedKeys: List[Key[_]] = _allowedKeys
+    override def allowedKeys: List[Key[_]] = _allowedKeys
   }
 
 }

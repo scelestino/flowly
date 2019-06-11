@@ -33,7 +33,7 @@ trait ExecutionTask extends SingleTask {
 
   protected def perform(sessionId: String, variables: Variables): ErrorOr[Variables]
 
-  override protected def allowedKeys: List[Key[_]] = List.empty
+  override def allowedKeys: List[Key[_]] = List.empty
 
 }
 

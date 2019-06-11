@@ -46,7 +46,7 @@ trait DisjunctionTask extends Task {
     */
   protected def blockOnNoCondition = false
 
-  override protected def allowedKeys: List[Key[_]] = List.empty
+  override def allowedKeys: List[Key[_]] = List.empty
 
   private def next(variables: ReadableVariables): Option[Task] = branches.collectFirst { case (condition, task) if condition(variables) => task }
 
