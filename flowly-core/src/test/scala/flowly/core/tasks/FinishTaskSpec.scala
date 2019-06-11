@@ -23,7 +23,7 @@ class FinishTaskSpec extends Specification{
   "FinishTask" should {
 
     "finish execution" in new Context {
-      FinishTask("1").execute("session1", variables) must_=== Finish
+      FinishTask("1").execute("session1", ec) must_=== Finish
     }
 
   }

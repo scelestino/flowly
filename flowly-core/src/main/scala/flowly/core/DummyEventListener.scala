@@ -57,5 +57,4 @@ class DummyEventListener extends EventListener {
   def onCancellation(sessionId: SessionId, reason: String, variables: ReadableExecutionContext, currentTask: Option[String]): Unit = {
     println(s"session $sessionId was cancelled in task $currentTask")
   }
-
 }
