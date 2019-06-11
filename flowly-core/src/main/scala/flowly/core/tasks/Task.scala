@@ -17,7 +17,7 @@
 package flowly.core.tasks
 
 import flowly.core.Param
-import flowly.core.variables.{Key, Variables}
+import flowly.core.variables.{Key, ExecutionContext}
 
 /**
   * [[Task]] is something to do inside a workflow
@@ -32,7 +32,7 @@ trait Task {
   /**
     * Perform a single step inside the workflow. It depends on the task implementation
     */
-  private[flowly] def execute(sessionId: String, variables: Variables): TaskResult
+  private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult
 
   /**
     * Check if all the keys are allowed by this task
@@ -49,6 +49,8 @@ trait Task {
     * executed with these keys
     */
   protected def allowedKeys: List[Key[_]]
+
+  private[flowly] def taskAllowedKeys = allowedKeys
 
   override def toString: String = s"Task:$id"
 

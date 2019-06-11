@@ -17,7 +17,7 @@
 package flowly.core.tasks
 
 import flowly.core.DisjunctionTaskError
-import flowly.core.variables.{Key, ReadableVariables, Variables}
+import flowly.core.variables.{Key, ReadableExecutionContext, ExecutionContext}
 
 /**
   * An instance of this [[Task]] will choose a branch of execution between different paths based on given conditions.
@@ -27,9 +27,9 @@ import flowly.core.variables.{Key, ReadableVariables, Variables}
   */
 trait DisjunctionTask extends Task {
 
-  protected def branches: List[(ReadableVariables => Boolean, Task)]
+  protected def branches: List[(ReadableExecutionContext => Boolean, Task)]
 
-  final private[flowly] def execute(sessionId: String, variables: Variables): TaskResult = try {
+  final private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = try {
     next(variables) match {
       case Some(next) => Continue(next, variables)
       case None if blockOnNoCondition => Block
@@ -48,29 +48,29 @@ trait DisjunctionTask extends Task {
 
   override protected def allowedKeys: List[Key[_]] = List.empty
 
-  private def next(variables: ReadableVariables): Option[Task] = branches.collectFirst { case (condition, task) if condition(variables) => task }
+  private def next(variables: ReadableExecutionContext): Option[Task] = branches.collectFirst { case (condition, task) if condition(variables) => task }
 
 }
 
 object DisjunctionTask {
 
-  def apply(_id: String, _branches: (ReadableVariables => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
+  def apply(_id: String, _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
     def id: String = _id
 
-    def branches: List[(ReadableVariables => Boolean, Task)] = _branches.toList
+    def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
   }
 
-  def apply(_id: String, ifTrue: Task, ifFalse: Task, condition: ReadableVariables => Boolean): DisjunctionTask = {
+  def apply(_id: String, ifTrue: Task, ifFalse: Task, condition: ReadableExecutionContext => Boolean): DisjunctionTask = {
     apply(_id, (condition, ifTrue), (_ => true, ifFalse))
   }
 
 }
 
 object BlockingDisjunctionTask {
-  def apply(_id: String, _allowedKeys: List[Key[_]], _branches: (ReadableVariables => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
+  def apply(_id: String, _allowedKeys: List[Key[_]], _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
     def id: String = _id
 
-    def branches: List[(ReadableVariables => Boolean, Task)] = _branches.toList
+    def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
 
     override protected def blockOnNoCondition = true
 

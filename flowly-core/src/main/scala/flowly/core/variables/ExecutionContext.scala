@@ -16,13 +16,17 @@
 
 package flowly.core.variables
 
+import flowly.core.repository.model.Session
+import flowly.core.repository.model.Session.SessionId
+import flowly.core.serialization.Serializer
 import flowly.core.tasks._
+
 import scala.reflect.runtime.universe.TypeTag
 
 /**
   * Read-only interface of Variables
   */
-trait ReadableVariables {
+trait ReadableExecutionContext {
 
   def get[T: TypeTag](key: Key[T]): Option[T]
 
@@ -31,6 +35,8 @@ trait ReadableVariables {
   def contains(key: Key[_]): Boolean
 
   def exists[T: TypeTag](key: Key[T], f: T => Boolean): Boolean
+
+  def vars: Map[String, Any]
 
 }
 
@@ -41,28 +47,23 @@ trait ReadableVariables {
   *
   * After a successful task this context is saved in the repository in order to keep safe any modification.
   *
-  * @param underlying variables storage
+  * @param variables variables storage
   */
-class Variables private[flowly](underlying: Map[String, Any]) extends ReadableVariables {
+class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val variables: Map[String, Any], serializer: Serializer) extends ReadableExecutionContext {
 
-  def get[T: TypeTag](key: Key[T]): Option[T] = underlying.get(key.identifier).map(_.asInstanceOf[T])
+  def get[T: TypeTag](key: Key[T]): Option[T] = variables.get(key.identifier).map(_.asInstanceOf[T]).map(serializer.deepCopy[T])
 
   def getOrElse[T: TypeTag](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
 
-  def contains(key: Key[_]): Boolean = underlying.contains(key.identifier)
+  def contains(key: Key[_]): Boolean = variables.contains(key.identifier)
 
   def exists[T: TypeTag](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
 
-  def set[T: TypeTag](key: Key[T], value: T): Variables = new Variables(underlying.updated(key.identifier, value))
+  def set[T: TypeTag](key: Key[T], value: T): ExecutionContext = new ExecutionContext(sessionId, variables.updated(key.identifier, serializer.deepCopy(value)), serializer)
 
-  def unset(key: Key[_]): Variables = new Variables(underlying.filterKeys(_ != key.identifier))
+  def unset(key: Key[_]): ExecutionContext = new ExecutionContext(sessionId, variables.filterKeys(_ != key.identifier), serializer)
 
-  /**
-    * It returns raw values from Variables
-    *
-    * @return
-    */
-  private[flowly] def values: Map[String, Any] = underlying
+  def vars: Map[String, Any] = serializer.deepCopy(variables)
 
   /**
     * Merge two Variables content (second overrides first one)
@@ -70,6 +71,10 @@ class Variables private[flowly](underlying: Map[String, Any]) extends ReadableVa
     * @param variables another Variables object
     * @return result of merging between both variables
     */
-  private[flowly] def merge(variables: Variables): Variables = new Variables(underlying ++ variables.values)
+  private[flowly] def merge(variables: Map[String, Any]): ExecutionContext = new ExecutionContext(sessionId: SessionId, variables ++ variables, serializer)
 
+}
+
+class ExecutionContextFactory(serializer: Serializer) {
+  def create(session: Session): ExecutionContext = new ExecutionContext(session.sessionId, session.variables, serializer)
 }

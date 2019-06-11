@@ -3,6 +3,7 @@ package flowly.core.serialization
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.SerializationException
+import scala.reflect.runtime.universe.TypeTag
 
 class Serializer(objectMapper: ObjectMapper with ScalaObjectMapper) {
 
@@ -14,7 +15,7 @@ class Serializer(objectMapper: ObjectMapper with ScalaObjectMapper) {
     }
   }
 
-  def read[T: Manifest](value: String): T = {
+  def read[T: TypeTag](value: String): T = {
     try {
       objectMapper.readValue[T](value)
     } catch {
@@ -22,6 +23,6 @@ class Serializer(objectMapper: ObjectMapper with ScalaObjectMapper) {
     }
   }
 
-  def deepCopy[T: Manifest](obj: Any): T = read(write(obj))
+  def deepCopy[T: TypeTag](obj: Any): T = read(write(obj))
 
 }

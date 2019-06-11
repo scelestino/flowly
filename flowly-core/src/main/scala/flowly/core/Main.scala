@@ -16,12 +16,19 @@
 
 package flowly.core
 
-import flowly.core.events.EventHook
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import flowly.core.events.EventListener
 import flowly.core.repository.InMemoryRepository
+import flowly.core.serialization.Serializer
 import flowly.core.tasks._
-import flowly.core.variables.Key
+import flowly.core.variables.{ExecutionContextFactory, Key}
 
 object Main extends App {
+
+  trait ObjectMapperComponent {
+    lazy val objectMapper = new ObjectMapper with ScalaObjectMapper
+  }
 
   trait Finish1Component {
     lazy val finish = FinishTask("FINISH 1")
@@ -61,11 +68,12 @@ object Main extends App {
     }
   }
 
-  object Components extends FirstComponent with SecondComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component
+  object Components extends FirstComponent with SecondComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperComponent
 
   val workflow = new Workflow {
     def initialTask: Task = Components.first
-    def eventHook: EventHook = new DummyEventHook
+    override def eventListeners = List(new DummyEventListener)
+    override val executionContextFactory = new ExecutionContextFactory(new Serializer(Components.objectMapper))
     override val repository = new InMemoryRepository
   }
 
@@ -88,8 +96,8 @@ object Main extends App {
 
   result match {
 
-    case Right(r) => val v: Boolean = r.variables.get(Key3).get
-                     println(s"THE RESULT CONTAINS ${r.variables}")
+    case Right(r) => val v: Boolean = r.executionContext.get(Key3).get
+                     println(s"THE RESULT CONTAINS ${r.executionContext.vars}")
     case Left(ex) => println(ex)
   }
 

@@ -16,41 +16,41 @@
 
 package flowly.core
 
-import flowly.core.events.EventHook
+import flowly.core.events.EventListener
 import flowly.core.repository.model.Session.SessionId
-import flowly.core.variables.ReadableVariables
+import flowly.core.variables.ReadableExecutionContext
 
-class DummyEventHook extends EventHook {
+class DummyEventListener extends EventListener {
 
-  def onInitialization(sessionId: SessionId, variables: ReadableVariables): Unit = {
+  def onInitialization(sessionId: SessionId, variables: ReadableExecutionContext): Unit = {
     println(s"Init a new instance $sessionId")
   }
 
-  def onStart(sessionId: SessionId, variables: ReadableVariables): Unit = {
+  def onStart(sessionId: SessionId, variables: ReadableExecutionContext): Unit = {
     println(s"session $sessionId just started")
   }
 
-  def onContinue(sessionId: SessionId, variables: ReadableVariables, currentTask: String, nextTask:String): Unit = {
+  def onContinue(sessionId: SessionId, variables: ReadableExecutionContext, currentTask: String, nextTask:String): Unit = {
     println(s"session $sessionId task $currentTask executed, next $nextTask")
   }
 
-  def onSkip(sessionId: SessionId, variables: ReadableVariables, currentTask: String, nextTask: String): Unit = {
+  def onSkip(sessionId: SessionId, variables: ReadableExecutionContext, currentTask: String, nextTask: String): Unit = {
     println(s"session $sessionId task $currentTask skipped, next $nextTask")
   }
 
-  def onBlock(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = {
+  def onBlock(sessionId: SessionId, variables: ReadableExecutionContext, currentTask: String): Unit = {
     println(s"session $sessionId task $currentTask blocked")
   }
 
-  def onFinish(sessionId: SessionId, variables: ReadableVariables, currentTask: String): Unit = {
+  def onFinish(sessionId: SessionId, variables: ReadableExecutionContext, currentTask: String): Unit = {
     println(s"session $sessionId just finished")
   }
 
-  def onError(sessionId: SessionId, variables: ReadableVariables, currentTask: String, cause:Throwable): Unit = {
+  def onError(sessionId: SessionId, variables: ReadableExecutionContext, currentTask: String, cause:Throwable): Unit = {
     println(s"session $sessionId task $currentTask with $cause")
   }
 
-  def onCancellation(sessionId: SessionId, reason: String, variables: ReadableVariables, currentTask: Option[String]): Unit = {
+  def onCancellation(sessionId: SessionId, reason: String, variables: ReadableExecutionContext, currentTask: Option[String]): Unit = {
     println(s"session $sessionId was cancelled in task $currentTask")
   }
 

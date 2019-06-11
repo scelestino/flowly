@@ -22,11 +22,11 @@ import java.util.UUID
 import flowly.core.repository.model.Session.{SessionId, Status}
 import flowly.core.repository.model.Status._
 import flowly.core.tasks.Task
-import flowly.core.variables.Variables
+import flowly.core.variables.ExecutionContext
 
-case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status, version: Long) {
+case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecution: Option[Execution], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status, version: Long) {
 
-  def running(task: Task, variables: Variables): Session = changeStatus(task, variables, RUNNING)
+  def running(task: Task, variables: Map[String, Any]): Session = changeStatus(task, variables, RUNNING)
 
   def blocked(task: Task): Session = changeStatus(task, variables, BLOCKED)
 
@@ -41,7 +41,7 @@ case class Session(sessionId: SessionId, variables: Variables, lastExecution: Op
     case _ => true
   }
 
-  private def changeStatus(task: Task, variables: Variables, status: Status): Session = {
+  private def changeStatus(task: Task, variables: Map[String, Any], status: Status): Session = {
     copy(lastExecution = Option(Execution(task.id)), variables = variables, status = status)
   }
 
@@ -52,11 +52,11 @@ object Session {
   type SessionId = String
   type Status    = String
 
-  def apply(id: SessionId, variables: Variables): Session = {
+  def apply(id: SessionId, variables: Map[String, Any]): Session = {
     new Session(id, variables, None, None, LocalDateTime.now, CREATED, 0L)
   }
 
-  def apply(variables: Variables): Session = apply(UUID.randomUUID.toString, variables)
+  def apply(variables: Map[String, Any]): Session = apply(UUID.randomUUID.toString, variables)
 }
 
 case class Execution(taskId: String, at: LocalDateTime)

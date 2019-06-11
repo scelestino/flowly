@@ -16,7 +16,7 @@
 
 package flowly.core.tasks
 
-import flowly.core.variables.Variables
+import flowly.core.variables.ExecutionContext
 
 /**
   * Interface of a [[Task]] execution result
@@ -27,17 +27,17 @@ trait TaskResult
   * Current workflow execution must be continued
   *
   * @param nextTask  next task to be executed
-  * @param variables current variables
+  * @param executionContext current execution context
   */
-case class Continue(nextTask: Task, variables: Variables) extends TaskResult
+case class Continue(nextTask: Task, executionContext: ExecutionContext) extends TaskResult
 
 /**
   * Current workflow execution must be continued but current task was skipped
   *
   * @param nextTask  next task to be executed
-  * @param variables current variables
+  * @param executionContext current execution context
   */
-case class SkipAndContinue(nextTask: Task, variables: Variables) extends TaskResult
+case class SkipAndContinue(nextTask: Task, executionContext: ExecutionContext) extends TaskResult
 
 /**
   * Current workflow execution has finished

@@ -17,7 +17,7 @@
 package flowly.core.tasks
 
 import flowly.core.ErrorOr
-import flowly.core.variables.{Key, Variables}
+import flowly.core.variables.{Key, ExecutionContext}
 
 /**
   * An instance of this [[Task]] will execute your code and can change the execution context.
@@ -25,13 +25,13 @@ import flowly.core.variables.{Key, Variables}
   */
 trait ExecutionTask extends SingleTask {
 
-  final private[flowly] def execute(sessionId: String, variables: Variables): TaskResult = try {
+  final private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = try {
     perform(sessionId, variables).fold(OnError, Continue(next, _))
   } catch {
     case throwable: Throwable => OnError(throwable)
   }
 
-  protected def perform(sessionId: String, variables: Variables): ErrorOr[Variables]
+  protected def perform(sessionId: String, variables: ExecutionContext): ErrorOr[ExecutionContext]
 
   override protected def allowedKeys: List[Key[_]] = List.empty
 
@@ -39,13 +39,13 @@ trait ExecutionTask extends SingleTask {
 
 object ExecutionTask {
 
-  def apply(_id: String, _next: Task)(_perform: (String, Variables) => ErrorOr[Variables]): ExecutionTask = new ExecutionTask {
+  def apply(_id: String, _next: Task)(_perform: (String, ExecutionContext) => ErrorOr[ExecutionContext]): ExecutionTask = new ExecutionTask {
 
     def id: String = _id
 
     def next: Task = _next
 
-    def perform(sessionId: String, variables: Variables): ErrorOr[Variables] = _perform(sessionId, variables)
+    def perform(sessionId: String, variables: ExecutionContext): ErrorOr[ExecutionContext] = _perform(sessionId, variables)
 
   }
 

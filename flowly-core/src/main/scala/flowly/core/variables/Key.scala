@@ -19,7 +19,7 @@ package flowly.core.variables
 import scala.reflect.ClassTag
 
 /**
-  * Interface used to get access to objects inside [[Variables]], it creates a relation
+  * Interface used to get access to objects inside [[ExecutionContext]], it creates a relation
   * between an identifier and a type.
   *
   * {{{

@@ -19,20 +19,20 @@ package flowly.core
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.{SessionId, Status}
 import flowly.core.tasks.Task
-import flowly.core.variables.ReadableVariables
+import flowly.core.variables.ReadableExecutionContext
 
 /**
   * Result of a Workflow execution
   *
   * @param sessionId session id
   * @param taskId    last task executed
-  * @param variables current variables
+  * @param executionContext current execution context
   * @param status    session status
   */
-case class Result(sessionId: SessionId, taskId: String, variables: ReadableVariables, status: Status)
+case class ExecutionResult private[flowly](sessionId: SessionId, taskId: String, executionContext: ReadableExecutionContext, status: Status)
 
-object Result {
+object ExecutionResult {
 
-  def apply(session: Session, task: Task): Result = Result(session.sessionId, task.id, session.variables, session.status)
+  def apply(session: Session, executionContext: ReadableExecutionContext, task: Task): ExecutionResult = ExecutionResult(session.sessionId, task.id, executionContext, session.status)
 
 }

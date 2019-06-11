@@ -16,7 +16,7 @@
 
 package flowly.core
 
-import flowly.core.variables.{Key, Variables}
+import flowly.core.variables.{Key, ExecutionContext}
 
 import scala.language.implicitConversions
 
@@ -37,7 +37,7 @@ object Param {
   }
 
   implicit class ParamSeqOps(params: Seq[Param]) {
-    private[flowly] def toVariables: Variables = new Variables(params.map( p => (p.key, p.value)).toMap)
+    private[flowly] def toVariables: Map[String, Any] = params.map(p => (p.key, p.value)).toMap
   }
 
 }
