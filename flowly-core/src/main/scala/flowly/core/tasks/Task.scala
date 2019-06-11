@@ -16,7 +16,7 @@
 
 package flowly.core.tasks
 
-import flowly.core.Param
+import flowly.core.{ErrorOr, Param, ParamsNotAllowed}
 import flowly.core.variables.{Key, ExecutionContext}
 
 /**
@@ -37,7 +37,14 @@ trait Task {
   /**
     * Check if all the keys are allowed by this task
     */
-  final private[flowly] def accept(params: List[Param]): Boolean = params.forall{case Param(key, value) => allowedKeys.exists( k => k.identifier.contains(key) && k.allowedType(value))}
+  final private[flowly] def accept(params: List[Param]): ErrorOr[Unit] = {
+    if(params.forall{case Param(key, value) => allowedKeys.exists( k => k.identifier == key && k.allowedType(value))}) {
+      Right()
+    } else {
+      Left(ParamsNotAllowed(allowedKeys.map(_.identifier), params))
+    }
+  }
+
 
   /**
     * A list of tasks that follows this task
@@ -48,9 +55,7 @@ trait Task {
     * A list of keys allowed by this task. It means that a session on this task can be
     * executed with these keys
     */
-  protected def allowedKeys: List[Key[_]]
-
-  private[flowly] def taskAllowedKeys = allowedKeys
+  def allowedKeys: List[Key[_]]
 
   override def toString: String = s"Task:$id"
 

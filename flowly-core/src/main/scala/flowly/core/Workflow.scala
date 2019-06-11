@@ -66,16 +66,10 @@ trait Workflow {
     currentSession <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
     // Get Current Task
-    currentTask <- {
-
-      val taskId = currentSession.lastExecution.map(_.taskId).getOrElse(initialTask.id)
-
-      tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
-
-    }
+    currentTask <- currentTask(currentSession)
 
     //Are params allowed?
-    _ <- validateParamsForTask(sessionId, currentTask, params.toList)
+    _ <- currentTask.accept(params.toList)
 
     executionContext = executionContextFactory.create(currentSession)
 
@@ -90,8 +84,10 @@ trait Workflow {
 
   } yield result
 
-  private def validateParamsForTask(sessionId: String, task: Task, params: List[Param]): ErrorOr[Unit] = {
-    if(task.accept(params)) Right() else Left(ParamsNotAllowed(sessionId, task.taskAllowedKeys.map(_.identifier), params))
+  private def currentTask(session: Session): ErrorOr[Task] = {
+    val taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
+
+    tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
   }
 
   private def execute(task: Task, session: Session, executionContext: ExecutionContext): ErrorOr[ExecutionResult] = {
@@ -182,6 +178,15 @@ trait Workflow {
     * @return Variables (read only)
     */
   def variables(sessionId: SessionId): ErrorOr[Map[String, Any]] = repository.getSession(sessionId).map(_.variables)
+
+  def currentAllowedKeys(sessionId: String): ErrorOr[List[Key[_]]] = for {
+
+    session <- repository.getSession(sessionId)
+
+    currentTask <- currentTask(session)
+
+  } yield currentTask.allowedKeys
+
 
   /**
     * It returns a list of every [[Task]] in this workflow

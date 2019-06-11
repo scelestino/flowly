@@ -35,7 +35,7 @@ case class SessionNotFound(sessionId: SessionId) extends Throwable
 
 case class SessionCantBeExecuted(sessionId: String) extends Throwable
 
-case class ParamsNotAllowed(sessionId: String, allowedKeys: List[String], receivedParams: List[Param]) extends Throwable
+case class ParamsNotAllowed(allowedKeys: List[String], receivedParams: List[Param]) extends Throwable
 
 case class RepositoryError()
 
