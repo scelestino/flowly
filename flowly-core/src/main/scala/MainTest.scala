@@ -22,7 +22,7 @@ import flowly.core.tasks._
 import flowly.core.variables.{ExecutionContextFactory, Key}
 import flowly.core.{DummyEventListener, Workflow}
 
-object Main extends App {
+object MainTest extends App {
 
   trait ObjectMapperComponent {
     lazy val objectMapper = new ObjectMapper with ScalaObjectMapper

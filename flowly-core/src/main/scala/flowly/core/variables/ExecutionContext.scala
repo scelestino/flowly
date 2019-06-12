@@ -66,10 +66,10 @@ class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val
   /**
     * Merge two Variables content (second overrides first one)
     *
-    * @param variables another Variables object
+    * @param v another Variables object
     * @return result of merging between both variables
     */
-  private[flowly] def merge(variables: Map[String, Any]): ExecutionContext = new ExecutionContext(sessionId: SessionId, variables ++ variables, serializer)
+  private[flowly] def merge(v: Map[String, Any]): ExecutionContext = new ExecutionContext(sessionId: SessionId, variables ++ v, serializer)
 
 }
 
