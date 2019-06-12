@@ -17,10 +17,11 @@
 package flowly.core.tasks
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import flowly.core.{BooleanKey, Param, StringKey}
-import flowly.core.BooleanKey
-import flowly.core.serialization.Serializer
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import flowly.core.serialization.{ScalaObjectMapperContext, Serializer}
 import flowly.core.variables.ExecutionContext
+import flowly.core.{BooleanKey, Param, StringKey}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
@@ -66,8 +67,9 @@ class BlockingTaskSpec extends Specification {
 
 }
 
-trait Context extends Scope {
-  private val variables = Seq[Param](StringKey -> "value1").toVariables
-  val ec: ExecutionContext = new ExecutionContext("session1", variables, new Serializer(new ObjectMapper()))
+trait Context extends Scope with ScalaObjectMapperContext {
+  private lazy val variables = Seq[Param](StringKey -> "value1").toVariables
+  private lazy val serializer: Serializer = new Serializer(objectMapper)
+  val ec: ExecutionContext = new ExecutionContext("session1", variables, serializer)
 }
 

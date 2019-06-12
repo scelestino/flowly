@@ -1,15 +1,10 @@
 package flowly.core.serialization
 
-import java.lang.reflect.{ParameterizedType, Type => JType}
-
-import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.SerializationException
 
-import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe._
-
-class Serializer(objectMapper: ObjectMapper) {
+class Serializer(objectMapper: ObjectMapper with ScalaObjectMapper) {
 
   def write(obj: Any): String = {
     try {
@@ -19,30 +14,14 @@ class Serializer(objectMapper: ObjectMapper) {
     }
   }
 
-  def read[T](value: String)(implicit tag: TypeTag[T]): T = {
+  def read[T: Manifest](value: String): T = {
     try {
-      objectMapper.readValue(value, typeReference[T])
+      objectMapper.readValue[T](value)
     } catch {
       case cause: Throwable => throw SerializationException(s"Error trying to deserialize $value", cause)
     }
   }
 
-  def deepCopy[T: TypeTag](obj: Any): T = read(write(obj))
-
-  private def typeReference[T](implicit tag: TypeTag[T]) = new TypeReference[T] {
-    override val getType: JType = jType(tag.tpe)
-  }
-
-  private def jType(typ: Type): JType =
-    synchronized {
-      typ match {
-        case TypeRef(_, sig, args) =>
-          new ParameterizedType {
-            val getRawType = currentMirror.runtimeClass(sig.asType.toType)
-            val getActualTypeArguments = args.map(jType).toArray
-            val getOwnerType = null
-          }
-      }
-    }
+  def deepCopy[T: Manifest](obj: Any): T = read[T](write(obj))
 
 }

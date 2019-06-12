@@ -45,7 +45,7 @@ object ExecutionTask {
 
     def next: Task = _next
 
-    def perform(sessionId: String, variables: ExecutionContext): ErrorOr[ExecutionContext] = _perform(sessionId, variables)
+    def perform(sessionId: String, executionContext: ExecutionContext): ErrorOr[ExecutionContext] = _perform(sessionId, executionContext)
 
   }
 
