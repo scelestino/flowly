@@ -1,3 +1,5 @@
+package flowly.core
+
 /*
  * Copyright © 2018-2019 the flowly project
  *
@@ -20,8 +22,9 @@ import flowly.core.repository.InMemoryRepository
 import flowly.core.serialization.Serializer
 import flowly.core.tasks._
 import flowly.core.variables.{ExecutionContextFactory, Key}
-import flowly.core.{DummyEventListener, Workflow}
 
+
+//TODO: Convert into tests with validations
 object MainTest extends App {
 
   trait ObjectMapperComponent {
@@ -51,7 +54,7 @@ object MainTest extends App {
 
   trait BlockingDisjunctionComponent {
     this: Finish2Component with DisjunctionComponent =>
-    lazy val blockingDisjunction: Task = BlockingDisjunctionTask("Disjunction", List(Key5, Key6), (_.contains(Key5), disjunction), (_.contains(Key6), finish2))
+    lazy val blockingDisjunction: Task = BlockingDisjunctionTask("BlockingDisjunction", List(Key5, Key6), (_.contains(Key5), disjunction), (_.contains(Key6), finish2))
   }
 
   trait DisjunctionComponent {
@@ -61,7 +64,7 @@ object MainTest extends App {
 
   trait FirstComponent {
     this: BlockingDisjunctionComponent =>
-    lazy val first: Task = ExecutionTask("EXECUTING 1", blockingDisjunction) { (sessionId, variables) =>
+    lazy val first: Task = ExecutionTask("EXECUTING 1", blockingDisjunction) { (_, variables) =>
       Right(variables.set(Key1, "foo bar baz"))
     }
   }
@@ -80,7 +83,7 @@ object MainTest extends App {
 
     sessionId <- workflow.init()
 
-    result <- workflow.execute(sessionId) // blocked
+    result <- workflow.execute(sessionId)
 
     _ = println(s"the result is $result\n")
 
@@ -88,7 +91,7 @@ object MainTest extends App {
 
     _ = println(s"the result is $result2\n")
 
-    result4 <- workflow.execute(sessionId, Key3 -> true)//FakeKey -> Test("a",1))
+    result4 <- workflow.execute(sessionId, Key3 -> true)
 
   } yield result4
 
@@ -107,8 +110,3 @@ case object Key3 extends Key[Boolean]
 case object Key4 extends Key[Boolean]
 case object Key5 extends Key[Int]
 case object Key6 extends Key[Int]
-/*case object FakeKey extends Key[Test] {
-  override def identifier = "Key3"
-}
-
-case class Test(a: String, b: Int)*/

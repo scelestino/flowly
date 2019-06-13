@@ -16,7 +16,7 @@
 
 package flowly.core.tasks
 
-import flowly.core.StringKey
+import flowly.core.{StringKey, TasksContext}
 import org.specs2.mutable.Specification
 
 
@@ -26,12 +26,12 @@ class ExecutionTaskSpec extends Specification {
 
   "ExecutionTask" should {
 
-    "continue if execution was successful" in new Context {
+    "continue if execution was successful" in new TasksContext {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec) }
       task.execute("session1", ec) must haveClass[Continue]
     }
 
-    "after a continue variables can change" in new Context {
+    "after a continue variables can change" in new TasksContext {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec.set(StringKey, "value2")) }
       task.execute("session1", ec) match {
         case Continue(_, v) => v.get(StringKey) must beSome("value2")
@@ -39,7 +39,7 @@ class ExecutionTaskSpec extends Specification {
       }
     }
 
-    "after a continue next task must be correct" in new Context {
+    "after a continue next task must be correct" in new TasksContext {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec) }
       task.execute("session1", ec) match {
         case Continue(nextTask, _) => nextTask must_=== task.next
@@ -47,7 +47,7 @@ class ExecutionTaskSpec extends Specification {
       }
     }
 
-    "error if execution was unsuccessful" in new Context {
+    "error if execution was unsuccessful" in new TasksContext {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
       task.execute("session1", ec) match {
         case OnError(TestException(message)) => message must_== "execution error"

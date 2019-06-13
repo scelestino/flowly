@@ -16,13 +16,14 @@
 
 package flowly.core.tasks
 
+import flowly.core.TasksContext
 import org.specs2.mutable.Specification
 
 class FinishTaskSpec extends Specification{
 
   "FinishTask" should {
 
-    "finish execution" in new Context {
+    "finish execution" in new TasksContext {
       FinishTask("1").execute("session1", ec) must_=== Finish
     }
 

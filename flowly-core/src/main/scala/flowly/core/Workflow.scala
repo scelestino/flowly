@@ -26,6 +26,9 @@ import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
 
 trait Workflow {
 
+  //Validate workflow consistency when constructed
+  checkWorkflowConsistency
+
   def initialTask: Task
 
   def eventListeners: List[EventListener] = Nil
@@ -74,7 +77,7 @@ trait Workflow {
     executionContext = executionContextFactory.create(currentSession)
 
     // On Start or Resume Event
-    _ = if (currentTask == initialTask) eventListeners.foreach(_.onStart(sessionId, executionContext))
+    _ = if (currentTask == initialTask && currentSession.lastExecution.isEmpty) eventListeners.foreach(_.onStart(sessionId, executionContext))
         else eventListeners.foreach(_.onResume(sessionId, executionContext))
 
     // Merge old and new Variables
@@ -201,6 +204,12 @@ trait Workflow {
     }
 
     tasks(initialTask, Nil)
+  }
+
+  private def checkWorkflowConsistency: Unit = {
+    val groups = tasks.groupBy(_.id).collect{case (k, v) if v.size > 1 => (k, v.size)}
+    if(groups.isEmpty) ()
+    else throw new IllegalStateException(s"There are repeated Tasks: $groups. Workflow can't be constructed")
   }
 
 }

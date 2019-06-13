@@ -16,30 +16,24 @@
 
 package flowly.core.tasks
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
-import flowly.core.serialization.{ScalaObjectMapperContext, Serializer}
-import flowly.core.variables.ExecutionContext
-import flowly.core.{BooleanKey, Param, StringKey}
+import flowly.core.{BooleanKey, StringKey, TasksContext}
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 
 class BlockingTaskSpec extends Specification {
 
   "BlockingTask" should {
 
-    "block execution if condition is false" in new Context {
+    "block execution if condition is false" in new TasksContext {
       val task = BlockingTask("1", FinishTask("2"), _.contains(BooleanKey), List(StringKey))
       task.execute("session1", ec) must_== Block
     }
 
-    "continue execution if condition is true" in new Context {
+    "continue execution if condition is true" in new TasksContext {
       val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey), List(StringKey))
       task.execute("session1", ec) must haveClass[Continue]
     }
 
-    "after a continue variables must be the same" in new Context {
+    "after a continue variables must be the same" in new TasksContext {
       val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey), List(StringKey))
       task.execute("session1", ec) match {
         case Continue(_, v) => v must_=== ec
@@ -47,7 +41,7 @@ class BlockingTaskSpec extends Specification {
       }
     }
 
-    "after a continue next task must be correct" in new Context {
+    "after a continue next task must be correct" in new TasksContext {
       val task = BlockingTask("1", FinishTask("2"), _.contains(StringKey), List(StringKey))
       task.execute("session1", ec) match {
         case Continue(nextTask, _) => nextTask must_=== task.next
@@ -55,7 +49,7 @@ class BlockingTaskSpec extends Specification {
       }
     }
 
-    "error if execution was unsuccessful" in new Context {
+    "error if execution was unsuccessful" in new TasksContext {
       val task = BlockingTask("1", FinishTask("2"), _ => throw TestException("execution error"), List(StringKey))
       task.execute("session1", ec) match {
         case OnError(TestException(message)) => message must_== "execution error"
@@ -65,11 +59,5 @@ class BlockingTaskSpec extends Specification {
 
   }
 
-}
-
-trait Context extends Scope with ScalaObjectMapperContext {
-  private lazy val variables = Seq[Param](StringKey -> "value1").toVariables
-  private lazy val serializer: Serializer = new Serializer(objectMapper)
-  val ec: ExecutionContext = new ExecutionContext("session1", variables, serializer)
 }
 

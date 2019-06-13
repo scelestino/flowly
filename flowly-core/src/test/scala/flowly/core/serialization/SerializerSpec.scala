@@ -1,10 +1,7 @@
 package flowly.core.serialization
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import flowly.core.Context
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 
 class SerializerSpec extends Specification {
 
@@ -62,14 +59,4 @@ class SerializerSpec extends Specification {
 class Container[T](val obj: T)
 class Fruta[T](val id: T, val name: String)
 
-trait Context extends Scope with ScalaObjectMapperContext {
-  lazy val serializer: Serializer = new Serializer(objectMapper)
-}
 
-trait ScalaObjectMapperContext {
-  lazy val objectMapper: ObjectMapper with ScalaObjectMapper = {
-    val om = new ObjectMapper() with ScalaObjectMapper
-    om.registerModule(new DefaultScalaModule)
-    om
-  }
-}
