@@ -1,7 +1,9 @@
+ThisBuild / organization := "com.despegar"
+ThisBuild / scalaVersion := "2.12.6"
+ThisBuild / version      := "0.1.0"
 
 lazy val `flowly-core` = project
   .settings(
-    organization := "com.despegar",
     name := "flowly-core",
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % "4.3.4" % "test",
@@ -13,7 +15,6 @@ lazy val `flowly-core` = project
 
 lazy val `flowly-mongodb` = project.
   settings(
-    organization := "com.despegar",
     name := "flowly-mongodb",
     libraryDependencies ++= Seq(
       "org.mongojack" % "mongojack" % "2.9.4"
