@@ -4,9 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.SerializationException
 
-class Serializer(objectMapper: ObjectMapper with ScalaObjectMapper) {
+trait Serializer {
+  def write(obj: Any): String
+  def read[T: Manifest](value: String): T
+  final def deepCopy[T: Manifest](obj: Any): T = read[T](write(obj))
+}
 
-  def write(obj: Any): String = {
+class JacksonSerializer(objectMapper: ObjectMapper with ScalaObjectMapper) extends Serializer {
+
+  override def write(obj: Any): String = {
     try {
       objectMapper.writeValueAsString(obj)
     } catch {
@@ -14,14 +20,12 @@ class Serializer(objectMapper: ObjectMapper with ScalaObjectMapper) {
     }
   }
 
-  def read[T: Manifest](value: String): T = {
+  override def read[T: Manifest](value: String): T = {
     try {
       objectMapper.readValue[T](value)
     } catch {
       case cause: Throwable => throw SerializationException(s"Error trying to deserialize $value", cause)
     }
   }
-
-  def deepCopy[T: Manifest](obj: Any): T = read[T](write(obj))
 
 }
