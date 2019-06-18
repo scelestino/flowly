@@ -19,7 +19,7 @@ package flowly.core
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.repository.InMemoryRepository
-import flowly.core.serialization.Serializer
+import flowly.core.serialization.{JacksonSerializer, Serializer}
 import flowly.core.tasks._
 import flowly.core.variables.{ExecutionContextFactory, Key}
 
@@ -74,7 +74,7 @@ object MainTest extends App {
   val workflow = new Workflow {
     def initialTask: Task = Components.first
     override def eventListeners = List(new DummyEventListener)
-    override val executionContextFactory = new ExecutionContextFactory(new Serializer(Components.objectMapper))
+    override val executionContextFactory = new ExecutionContextFactory(new JacksonSerializer(Components.objectMapper))
     override val repository = new InMemoryRepository
   }
 
