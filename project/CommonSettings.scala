@@ -12,5 +12,5 @@ object CommonSettings {
         resolvers += "Nexus Public Repository" at "http://vmtilcara.servers.despegar.it:8080/nexus/content/groups/public",
         resolvers += "Nexus Snapshots Repository" at "http://vmtilcara.servers.despegar.it:8080/nexus/content/repositories/snapshots",
         resolvers += "Nexus Proxies Repository" at "http://vmtilcara.servers.despegar.it:8080/nexus/content/groups/proxies",
-        scalaVersion := "2.12.6")
+        scalaVersion := "2.12.8")
 }
