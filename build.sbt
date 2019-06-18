@@ -1,8 +1,12 @@
-ThisBuild / organization := "com.despegar"
-ThisBuild / scalaVersion := "2.12.6"
-ThisBuild / version      := "0.1.0"
+lazy val root = (project in file("."))
+  .settings(publishArtifact := false)
+  .settings(
+    name := "flowly",
+  )
+  .aggregate(`flowly-core`, `flowly-mongodb`)
 
 lazy val `flowly-core` = project
+  .settings(CommonSettings.settings: _*)
   .settings(
     name := "flowly-core",
     libraryDependencies ++= Seq(
@@ -13,8 +17,9 @@ lazy val `flowly-core` = project
     )
   )
 
-lazy val `flowly-mongodb` = project.
-  settings(
+lazy val `flowly-mongodb` = project
+  .settings(CommonSettings.settings: _*)
+  .settings(
     name := "flowly-mongodb",
     libraryDependencies ++= Seq(
       "org.mongojack" % "mongojack" % "2.9.4"
