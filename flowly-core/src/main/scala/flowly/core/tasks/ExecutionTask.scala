@@ -43,7 +43,7 @@ object ExecutionTask {
 
     def id: String = _id
 
-    def next: Task = _next
+    val next: Task = _next
 
     def perform(sessionId: String, executionContext: ExecutionContext): ErrorOr[ExecutionContext] = _perform(sessionId, executionContext)
 

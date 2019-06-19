@@ -43,7 +43,7 @@ object BlockingTask {
 
     def id: String = _id
 
-    def next: Task = _next
+    val next: Task = _next
 
     def condition(variables: ReadableExecutionContext): Boolean = _condition(variables)
 

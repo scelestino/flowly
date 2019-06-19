@@ -22,7 +22,7 @@ package flowly.core.tasks
   */
 trait SingleTask extends Task {
 
-  def next: Task
+  val next: Task
 
   private[flowly] def followedBy: List[Task] = next :: Nil
 
