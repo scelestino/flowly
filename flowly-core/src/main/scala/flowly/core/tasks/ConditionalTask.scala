@@ -23,7 +23,7 @@ trait ConditionalTask extends SingleTask {
 object ConditionalTask {
   def apply(_id: String, _next: Task, _condition: ReadableExecutionContext => Boolean, _allowedKeys: List[Key[_]])(_perform: (String, ExecutionContext) => ErrorOr[ExecutionContext]): ConditionalTask = new ConditionalTask {
 
-    override def id: String = _id
+    override val id: String = _id
 
     val next: Task = _next
 

@@ -27,7 +27,7 @@ import flowly.core.variables.{Key, ExecutionContext}
   */
 trait Task {
 
-  def id: String = this.getClass.getName
+  val id: String = this.getClass.getSimpleName
 
   /**
     * Perform a single step inside the workflow. It depends on the task implementation

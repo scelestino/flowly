@@ -41,7 +41,7 @@ object BlockingTask {
 
   def apply(_id: String, _next: Task, _condition: ReadableExecutionContext => Boolean, _allowedKeys: List[Key[_]]): BlockingTask = new BlockingTask {
 
-    override def id: String = _id
+    override val id: String = _id
 
     val next: Task = _next
 

@@ -55,7 +55,7 @@ trait DisjunctionTask extends Task {
 object DisjunctionTask {
 
   def apply(_id: String, _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
-    override def id: String = _id
+    override val id: String = _id
 
     def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
   }
@@ -68,7 +68,7 @@ object DisjunctionTask {
 
 object BlockingDisjunctionTask {
   def apply(_id: String, _allowedKeys: List[Key[_]], _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
-    override def id: String = _id
+    override val id: String = _id
 
     def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
 
