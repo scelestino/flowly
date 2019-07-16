@@ -41,7 +41,7 @@ object ExecutionTask {
 
   def apply(_id: String, _next: Task)(_perform: (String, ExecutionContext) => ErrorOr[ExecutionContext]): ExecutionTask = new ExecutionTask {
 
-    def id: String = _id
+    override def id: String = _id
 
     def next: Task = _next
 

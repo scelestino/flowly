@@ -27,7 +27,7 @@ import flowly.core.variables.{Key, ExecutionContext}
   *
   * @param id task id
   */
-case class FinishTask(id: String) extends Task {
+case class FinishTask(override val id: String) extends Task {
 
   final private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = Finish
 

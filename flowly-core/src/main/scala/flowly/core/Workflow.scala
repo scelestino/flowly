@@ -29,6 +29,8 @@ trait Workflow {
   //Validate workflow consistency when constructed
   checkWorkflowConsistency
 
+  //TODO: It could be useful to validate that current open sessions in DB are blocked in valid tasks for the current Workflow.
+
   def initialTask: Task
 
   def eventListeners: List[EventListener] = Nil
