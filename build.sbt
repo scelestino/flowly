@@ -1,5 +1,6 @@
 lazy val root = (project in file("."))
   .settings(publishArtifact := false)
+  .settings(CommonSettings.settings: _*)
   .settings(
     name := "flowly",
   )
