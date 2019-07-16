@@ -45,7 +45,7 @@ trait Workflow {
     * @param params initial workflow variables
     * @return session id
     */
-  def init(params: Param*): ErrorOr[String] = {
+  def init(params: Param*): ErrorOr[SessionId] = {
 
     repository.insertSession(Session(params.toVariables)).map { session =>
 
