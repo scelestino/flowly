@@ -59,7 +59,7 @@ class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val
 
   def set[T: Manifest](key: Key[T], value: T): ExecutionContext = new ExecutionContext(sessionId, variables.updated(key.identifier, serializer.deepCopy(value)), serializer)
 
-  def unset(key: Key[_]): ExecutionContext = new ExecutionContext(sessionId, variables.filterKeys(_ != key.identifier), serializer)
+  def unset(key: Key[_]): ExecutionContext = new ExecutionContext(sessionId, variables.removed(key.identifier), serializer)
 
   def vars: Map[String, Any] = serializer.deepCopy(variables)
 

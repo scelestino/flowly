@@ -12,5 +12,6 @@ object CommonSettings {
         resolvers += "Nexus Public Repository" at "http://nexus.despegar.it/nexus/content/groups/public",
         resolvers += "Nexus Snapshots Repository" at "http://nexus.despegar.it/nexus/content/repositories/snapshots",
         resolvers += "Nexus Proxies Repository" at "http://nexus.despegar.it/nexus/content/groups/proxies",
-        scalaVersion := "2.12.8")
+        scalaVersion := "2.13.0",
+        crossScalaVersions := Seq("2.12.8", "2.13.0"))
 }

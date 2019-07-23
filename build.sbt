@@ -6,15 +6,17 @@ lazy val root = (project in file("."))
   )
   .aggregate(`flowly-core`, `flowly-mongodb`)
 
+val jacksonVersion = "2.9.9"
+
 lazy val `flowly-core` = project
   .settings(CommonSettings.settings: _*)
   .settings(
     name := "flowly-core",
     libraryDependencies ++= Seq(
-      "org.specs2" %% "specs2-core" % "4.3.4" % "test",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.8" % "test",
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.9.8" % "test",
-      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.8" % "test"
+      "org.specs2" %% "specs2-core" % "4.6.0" % "test",
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion % "test",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion % "test",
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion % "test"
     )
   )
 
@@ -23,10 +25,10 @@ lazy val `flowly-mongodb` = project
   .settings(
     name := "flowly-mongodb",
     libraryDependencies ++= Seq(
-      "org.mongojack" % "mongojack" % "2.9.4",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.8",
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.9.8",
-      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.8"
+      "org.mongojack" % "mongojack" % "2.10.0",
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion,
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
     )
   )
   .dependsOn(`flowly-core`)
