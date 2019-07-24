@@ -16,6 +16,8 @@
 
 package flowly.core.events
 
+import java.time.Instant
+
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.variables.ReadableExecutionContext
 
@@ -38,4 +40,8 @@ class BaseEventListener extends EventListener {
   def onError(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause:Throwable): Unit = ()
 
   def onCancellation(sessionId: SessionId, reason: String, executionContext: ReadableExecutionContext, currentTask: Option[String]): Unit = ()
+
+  def onRetry(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit = ()
+
+  def onScheduleRetry(sessionId: SessionId, attempts: Int, nextAttempt: Instant, executionContext: ReadableExecutionContext, currentTask: String): Unit = ()
 }

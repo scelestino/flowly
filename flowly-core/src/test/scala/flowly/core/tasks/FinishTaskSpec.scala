@@ -17,6 +17,8 @@
 package flowly.core.tasks
 
 import flowly.core.TasksContext
+import flowly.core.tasks.basic.FinishTask
+import flowly.core.tasks.model.Finish
 import org.specs2.mutable.Specification
 
 class FinishTaskSpec extends Specification{

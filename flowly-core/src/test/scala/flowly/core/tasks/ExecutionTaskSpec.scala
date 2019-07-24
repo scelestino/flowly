@@ -16,6 +16,8 @@
 
 package flowly.core.tasks
 
+import flowly.core.tasks.basic.{ExecutionTask, FinishTask}
+import flowly.core.tasks.model.{Continue, OnError}
 import flowly.core.{StringKey, TasksContext}
 import org.specs2.mutable.Specification
 
@@ -50,7 +52,7 @@ class ExecutionTaskSpec extends Specification {
     "error if execution was unsuccessful" in new TasksContext {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
       task.execute("session1", ec) match {
-        case OnError(TestException(message)) => message must_== "execution error"
+        case OnError(TestException(message), _) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
       }
     }

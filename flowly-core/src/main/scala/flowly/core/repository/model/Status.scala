@@ -36,4 +36,6 @@ object Status {
 
   val CANCELLED: Status = "CANCELLED"
 
+  val TO_RETRY: Status = "TO_RETRY"
+
 }

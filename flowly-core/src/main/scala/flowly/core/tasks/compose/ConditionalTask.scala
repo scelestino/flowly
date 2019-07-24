@@ -1,7 +1,9 @@
-package flowly.core.tasks
+package flowly.core.tasks.compose
 
 import flowly.core.ErrorOr
-import flowly.core.variables.{Key, ReadableExecutionContext, ExecutionContext}
+import flowly.core.tasks.basic.{SingleTask, Task}
+import flowly.core.tasks.model.{Continue, OnError, SkipAndContinue, TaskResult}
+import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
 
 trait ConditionalTask extends SingleTask {
 
@@ -11,9 +13,9 @@ trait ConditionalTask extends SingleTask {
 
   override def allowedKeys: List[Key[_]] = List.empty
 
-  final private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = try {
-      if(condition(variables)) perform(sessionId, variables).fold(OnError, Continue(next, _))
-      else SkipAndContinue(next, variables)
+  final private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
+      if(condition(executionContext)) perform(sessionId, executionContext).fold(OnError(_), Continue(next, _))
+      else SkipAndContinue(next)
   } catch {
     case throwable: Throwable => OnError(throwable)
   }

@@ -16,6 +16,8 @@
 
 package flowly.core.tasks
 
+import flowly.core.tasks.basic.{DisjunctionTask, FinishTask}
+import flowly.core.tasks.model.{Continue, OnError}
 import flowly.core.{DisjunctionTaskError, IntKey, StringKey, TasksContext}
 import org.specs2.mutable.Specification
 
@@ -38,14 +40,14 @@ class DisjunctionTaskSpec extends Specification {
     }
 
     "error if there no valid condition" in new TasksContext {
-      val task = DisjunctionTask("1", (_.contains(IntKey), FinishTask("2")))
+      val task = basic.DisjunctionTask("1", (_.contains(IntKey), FinishTask("2")))
       task.execute("session1", ec) must_== OnError(DisjunctionTaskError())
     }
 
     "error if execution was unsuccessful" in new TasksContext {
-      val task = DisjunctionTask("1", (_ => throw TestException("execution error"), FinishTask("2")))
+      val task = basic.DisjunctionTask("1", (_ => throw TestException("execution error"), FinishTask("2")))
       task.execute("session1", ec) match {
-        case OnError(TestException(message)) => message must_== "execution error"
+        case OnError(TestException(message), _) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
       }
     }

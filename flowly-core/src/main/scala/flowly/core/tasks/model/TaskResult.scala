@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package flowly.core.tasks
+package flowly.core.tasks.model
 
+import flowly.core.tasks.basic.Task
 import flowly.core.variables.ExecutionContext
 
 /**
@@ -35,9 +36,8 @@ case class Continue(nextTask: Task, executionContext: ExecutionContext) extends 
   * Current workflow execution must be continued but current task was skipped
   *
   * @param nextTask  next task to be executed
-  * @param executionContext current execution context
   */
-case class SkipAndContinue(nextTask: Task, executionContext: ExecutionContext) extends TaskResult
+case class SkipAndContinue(nextTask: Task) extends TaskResult
 
 /**
   * Current workflow execution has finished
@@ -55,5 +55,6 @@ case object Block extends TaskResult
   * There was an unexpected error during current workflow execution
   *
   * @param cause  error
+  * @param taskAttempts attempts metadata. Only present for retryable Tasks
   */
-case class OnError(cause: Throwable) extends TaskResult
+case class OnError(cause: Throwable, taskAttempts: Option[TaskAttempts] = None) extends TaskResult

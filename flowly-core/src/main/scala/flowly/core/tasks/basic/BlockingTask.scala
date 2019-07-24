@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package flowly.core.tasks
+package flowly.core.tasks.basic
 
-import flowly.core.variables.{Key, ReadableExecutionContext, ExecutionContext}
+import flowly.core.tasks.model.{Block, Continue, OnError, TaskResult}
+import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
 
 
 /**

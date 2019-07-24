@@ -16,6 +16,8 @@
 
 package flowly.core.tasks
 
+import flowly.core.tasks.basic.{BlockingTask, FinishTask}
+import flowly.core.tasks.model.{Block, Continue, OnError}
 import flowly.core.{BooleanKey, StringKey, TasksContext}
 import org.specs2.mutable.Specification
 
@@ -52,7 +54,7 @@ class BlockingTaskSpec extends Specification {
     "error if execution was unsuccessful" in new TasksContext {
       val task = BlockingTask("1", FinishTask("2"), _ => throw TestException("execution error"), List(StringKey))
       task.execute("session1", ec) match {
-        case OnError(TestException(message)) => message must_== "execution error"
+        case OnError(TestException(message), _) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
       }
     }

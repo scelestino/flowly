@@ -19,7 +19,7 @@ package flowly.core.variables
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.serialization.Serializer
-import flowly.core.tasks._
+import flowly.core.tasks.basic.{BlockingTask, DisjunctionTask, ExecutionTask}
 
 /**
   * Read-only interface of Variables

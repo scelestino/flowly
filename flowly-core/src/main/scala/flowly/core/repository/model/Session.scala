@@ -21,7 +21,7 @@ import java.util.UUID
 
 import flowly.core.repository.model.Session.{SessionId, Status}
 import flowly.core.repository.model.Status._
-import flowly.core.tasks.Task
+import flowly.core.tasks.basic.Task
 import flowly.core.variables.ExecutionContext
 
 case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecution: Option[Execution], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status, version: Long) {
@@ -33,6 +33,8 @@ case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecut
   def finished(task: Task): Session = changeStatus(task, variables, FINISHED)
 
   def onError(task: Task, throwable: Throwable): Session = changeStatus(task, variables, ERROR)
+
+  def toRetry(task: Task, throwable: Throwable): Session = changeStatus(task, variables, TO_RETRY)
 
   def cancelled(reason: String): Session = copy(cancellation = Option(Cancellation(reason)), status = CANCELLED)
 

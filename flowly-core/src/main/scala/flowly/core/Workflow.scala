@@ -20,7 +20,8 @@ import flowly.core.events.EventListener
 import flowly.core.repository.Repository
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
-import flowly.core.tasks._
+import flowly.core.tasks.basic.Task
+import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, SkipableKey, TaskAttemptsKey}
 import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
 
 
@@ -103,10 +104,27 @@ trait Workflow {
       // Execute Task
       task.execute(currentSession.sessionId, executionContext) match {
 
-        case Continue(next, currentExecutionContext) =>
+        case Continue(next, resultingExecutionContext) =>
+
+          // Clean attempts info for retries
+          val currentExecutionContext = resultingExecutionContext.unset(TaskAttemptsKey)
 
           // On Continue Event
           eventListeners.foreach(_.onContinue(session.sessionId, currentExecutionContext, task.id, next.id))
+
+          // Execute next Task
+          execute(next, currentSession, currentExecutionContext)
+
+        case SkipAndContinue(next) =>
+
+          // Clean attempts info for retries and Skip flag
+          val currentExecutionContext = executionContext.unset(TaskAttemptsKey).unset(SkipableKey)
+
+          // On skip and Continue Events
+          eventListeners.foreach(l => {
+            l.onSkip(session.sessionId, currentExecutionContext, task.id, next.id)
+            l.onContinue(session.sessionId, currentExecutionContext, task.id, next.id)
+          })
 
           // Execute next Task
           execute(next, currentSession, currentExecutionContext)
@@ -133,7 +151,32 @@ trait Workflow {
 
           })
 
-        case OnError(cause) =>
+        case OnError(cause, Some(attemptsInfo)) =>
+
+          val currentExecutionContext = executionContext.set(TaskAttemptsKey, attemptsInfo)
+
+          val sessionToUpdate = attemptsInfo.nextRetry match {
+                                  case Some(nextRetryDate) =>
+
+                                    // On Schedule Retry Event
+                                    eventListeners.foreach(_.onScheduleRetry(session.sessionId, attemptsInfo.quantity, nextRetryDate, currentExecutionContext, task.id))
+
+                                    currentSession.toRetry(task, cause)
+
+                                  case None => currentSession.onError(task, cause)
+                                }
+
+          // TODO: if repo fails I lost original cause
+          repository.updateSession(sessionToUpdate).fold(onFailure, { session =>
+
+            // On Error Event
+            eventListeners.foreach(_.onError(session.sessionId, currentExecutionContext, task.id, cause))
+
+            Left(ExecutionError(session, task, cause))
+
+          })
+
+        case OnError(cause, _) =>
 
           // TODO: if repo fails I lost original cause
           repository.updateSession(currentSession.onError(task, cause)).fold(onFailure, { session =>

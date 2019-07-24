@@ -19,7 +19,7 @@ package flowly.core
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.repository.InMemoryRepository
-import flowly.core.tasks._
+import flowly.core.tasks.basic.{BlockingDisjunctionTask, DisjunctionTask, FinishTask, Task, BlockingTask, ExecutionTask}
 import flowly.core.variables.{ExecutionContextFactory, Key}
 
 

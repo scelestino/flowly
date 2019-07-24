@@ -18,7 +18,7 @@ package flowly.core
 
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.{SessionId, Status}
-import flowly.core.tasks.Task
+import flowly.core.tasks.basic.Task
 import flowly.core.variables.ReadableExecutionContext
 
 /**

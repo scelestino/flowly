@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package flowly.core.tasks
+package flowly.core.tasks.basic
 
 import flowly.core.ErrorOr
-import flowly.core.variables.{Key, ExecutionContext}
+import flowly.core.tasks.model.{Continue, OnError, TaskResult}
+import flowly.core.variables.{ExecutionContext, Key}
 
 /**
   * An instance of this [[Task]] will execute your code and can change the execution context.
@@ -25,8 +26,8 @@ import flowly.core.variables.{Key, ExecutionContext}
   */
 trait ExecutionTask extends SingleTask {
 
-  final private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
-    perform(sessionId, executionContext).fold(OnError, Continue(next, _))
+  private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
+    perform(sessionId, executionContext).fold(OnError(_), Continue(next, _))
   } catch {
     case throwable: Throwable => OnError(throwable)
   }
