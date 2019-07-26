@@ -20,6 +20,7 @@ import java.time.Instant
 
 import flowly.core.events.EventListener
 import flowly.core.repository.model.Session.SessionId
+import flowly.core.tasks.model.TaskAttempts
 import flowly.core.variables.ReadableExecutionContext
 
 class DummyEventListener extends EventListener {
@@ -60,11 +61,8 @@ class DummyEventListener extends EventListener {
     println(s"session $sessionId was cancelled in task $currentTask")
   }
 
-  def onRetry(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit = {
-    println(s"session $sessionId about to retry")
+  def onToRetry(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable, taskAttempts: TaskAttempts): Unit = {
+    println(s"session $sessionId in task $currentTask is going to retry ${taskAttempts.nextRetry}")
   }
 
-  def onScheduleRetry(sessionId: SessionId, attempts: Int, nextAttempt: Instant, executionContext: ReadableExecutionContext, currentTask: String): Unit = {
-    println(s"session $sessionId just schedule to retry")
-  }
 }

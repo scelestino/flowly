@@ -16,9 +16,8 @@
 
 package flowly.core.events
 
-import java.time.Instant
-
 import flowly.core.repository.model.Session.SessionId
+import flowly.core.tasks.model.TaskAttempts
 import flowly.core.variables.ReadableExecutionContext
 
 /**
@@ -26,17 +25,15 @@ import flowly.core.variables.ReadableExecutionContext
   */
 trait EventListener {
 
-  def onInitialization(sessionId:SessionId, vars: Map[String, Any]): Unit
+  def onInitialization(sessionId: SessionId, vars: Map[String, Any]): Unit
 
   def onStart(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit
 
   def onResume(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit
 
-  def onRetry(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit
+  def onContinue(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, nextTask: String): Unit
 
-  def onContinue(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, nextTask:String): Unit
-
-  def onSkip(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, nextTask:String): Unit
+  def onSkip(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, nextTask: String): Unit
 
   def onBlock(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String): Unit
 
@@ -44,8 +41,8 @@ trait EventListener {
 
   def onError(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable): Unit
 
-  def onCancellation(sessionId: SessionId, reason: String, executionContext: ReadableExecutionContext, currentTask: Option[String]): Unit
+  def onToRetry(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable, taskAttempts: TaskAttempts): Unit
 
-  def onScheduleRetry(sessionId: SessionId, attempts: Int, nextAttempt: Instant, executionContext: ReadableExecutionContext, currentTask: String): Unit
+  def onCancellation(sessionId: SessionId, reason: String, executionContext: ReadableExecutionContext, currentTask: Option[String]): Unit
 
 }

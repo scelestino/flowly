@@ -8,7 +8,8 @@ import flowly.core.variables.ReadableExecutionContext
 class ExponentialSchedulingStrategy(secondsForFirstRetry: Int) extends SchedulingStrategy {
 
   override def nextRetryDate(taskAttempts: TaskAttempts, executionContext: ReadableExecutionContext): Instant = {
-    taskAttempts.lastAttempt.plusSeconds(Math.pow(secondsForFirstRetry, taskAttempts.quantity).toLong)
+//    taskAttempts.lastAttempt.plusSeconds(Math.pow(secondsForFirstRetry, taskAttempts.quantity).toLong)
+    ???
   }
 
 }

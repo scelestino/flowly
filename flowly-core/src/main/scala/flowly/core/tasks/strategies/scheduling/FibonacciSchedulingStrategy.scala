@@ -9,7 +9,8 @@ class FibonacciSchedulingStrategy(secondsForFirstRetry: Int) extends SchedulingS
 
   override def nextRetryDate(taskAttempts: TaskAttempts, executionContext: ReadableExecutionContext): Instant = {
     val multiplier = getFibonacciNumber(taskAttempts.quantity)
-    taskAttempts.lastAttempt.plusSeconds(multiplier * secondsForFirstRetry)
+    //taskAttempts.lastAttempt.plusSeconds(multiplier * secondsForFirstRetry)
+    ???
   }
 
   private def getFibonacciNumber(i: Int): Int = {

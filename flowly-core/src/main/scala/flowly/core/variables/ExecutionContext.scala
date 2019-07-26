@@ -16,6 +16,7 @@
 
 package flowly.core.variables
 
+import flowly.core.{ErrorOr, KeyNotFound}
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.serialization.Serializer
@@ -29,6 +30,8 @@ trait ReadableExecutionContext {
   def get[T: Manifest](key: Key[T]): Option[T]
 
   def getOrElse[T: Manifest](key: Key[T], orElse: => T): T
+
+  def getOrError[T: Manifest](key: Key[T]):ErrorOr[T]
 
   def contains(key: Key[_]): Boolean
 
@@ -52,6 +55,8 @@ class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val
   def get[T: Manifest](key: Key[T]): Option[T] = variables.get(key.identifier).map(_.asInstanceOf[T]).map(serializer.deepCopy[T])
 
   def getOrElse[T: Manifest](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
+
+  def getOrError[T: Manifest](key: Key[T]): ErrorOr[T] = get(key).toRight(KeyNotFound(key.identifier))
 
   def contains(key: Key[_]): Boolean = variables.contains(key.identifier)
 

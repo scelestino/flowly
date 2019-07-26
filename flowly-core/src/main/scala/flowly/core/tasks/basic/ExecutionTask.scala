@@ -27,7 +27,7 @@ import flowly.core.variables.{ExecutionContext, Key}
 trait ExecutionTask extends SingleTask {
 
   private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
-    perform(sessionId, executionContext).fold(OnError(_), Continue(next, _))
+    perform(sessionId, executionContext).fold(OnError, Continue(next, _))
   } catch {
     case throwable: Throwable => OnError(throwable)
   }

@@ -16,6 +16,8 @@
 
 package flowly.core.tasks.model
 
+import java.time.Instant
+
 import flowly.core.tasks.basic.Task
 import flowly.core.variables.ExecutionContext
 
@@ -55,6 +57,13 @@ case object Block extends TaskResult
   * There was an unexpected error during current workflow execution
   *
   * @param cause  error
-  * @param taskAttempts attempts metadata. Only present for retryable Tasks
   */
-case class OnError(cause: Throwable, taskAttempts: Option[TaskAttempts] = None) extends TaskResult
+case class OnError(cause: Throwable) extends TaskResult
+
+/**
+  * There was an unexpected error during current workflow execution but the task can be retried
+  *
+  * @param cause  error
+  * @param nextRetry next instant when this task should be retried
+  */
+case class ToRetry(cause: Throwable, nextRetry:Instant) extends TaskResult

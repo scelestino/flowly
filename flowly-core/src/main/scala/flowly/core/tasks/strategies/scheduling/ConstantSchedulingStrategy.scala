@@ -8,7 +8,9 @@ import flowly.core.variables.ReadableExecutionContext
 class ConstantSchedulingStrategy(secondsBetweenRetries: Int) extends SchedulingStrategy {
 
   override def nextRetryDate(taskAttempts: TaskAttempts, executionContext: ReadableExecutionContext): Instant = {
-    taskAttempts.lastAttempt.plusSeconds(secondsBetweenRetries)
+    //taskAttempts.lastAttempt.plusSeconds(secondsBetweenRetries)
+    ???
+    // TODO: los comento por ahora
   }
 
 }

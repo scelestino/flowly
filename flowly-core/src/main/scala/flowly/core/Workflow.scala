@@ -21,14 +21,14 @@ import flowly.core.repository.Repository
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.basic.Task
-import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, SkipableKey, TaskAttemptsKey}
+import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, ToRetry}
 import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
 
 
 trait Workflow {
 
   //Validate workflow consistency when constructed
-  checkWorkflowConsistency
+  checkWorkflowConsistency()
 
   //TODO: It could be useful to validate that current open sessions in DB are blocked in valid tasks for the current Workflow.
 
@@ -69,25 +69,31 @@ trait Workflow {
   def execute(sessionId: SessionId, params: Param*): ErrorOr[ExecutionResult] = for {
 
     // Get Session, can be executed?
-    currentSession <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
+    session <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
     // Get Current Task
-    currentTask <- currentTask(currentSession)
+    currentTask <- currentTask(session)
 
     //Are params allowed?
     _ <- currentTask.accept(params.toList)
 
-    executionContext = executionContextFactory.create(currentSession)
+    executionContext = executionContextFactory.create(session)
 
     // On Start or Resume Event
-    _ = if (currentTask == initialTask && currentSession.lastExecution.isEmpty) eventListeners.foreach(_.onStart(sessionId, executionContext))
-        else eventListeners.foreach(_.onResume(sessionId, executionContext))
+    _ = if (currentTask == initialTask && session.lastExecution.isEmpty) eventListeners.foreach(_.onStart(sessionId, executionContext))
+    else eventListeners.foreach(_.onResume(sessionId, executionContext))
 
     // Merge old and new Variables
     currentExecutionContext = executionContext.merge(params.toVariables)
 
+    // Set the session as running
+    runningSession <- repository.updateSession(session.resume(currentTask, executionContext.variables))
+
+    // On Start Event
+    _ = if(currentTask == initialTask) eventListeners.foreach(_.onStart(sessionId, currentExecutionContext))
+
     // Execute from Current Task
-    result <- execute(currentTask, currentSession, currentExecutionContext)
+    result <- execute(currentTask, runningSession, currentExecutionContext)
 
   } yield result
 
@@ -99,103 +105,85 @@ trait Workflow {
 
   private def execute(task: Task, session: Session, executionContext: ExecutionContext): ErrorOr[ExecutionResult] = {
 
-    def onSuccess(currentSession: Session): ErrorOr[ExecutionResult] = {
+    def onFailure(cause: Throwable): ErrorOr[ExecutionResult] = Left(ExecutionError(session, task, cause))
 
-      // Execute Task
-      task.execute(currentSession.sessionId, executionContext) match {
+    // Execute Task
+    task.execute(session.sessionId, executionContext) match {
 
-        case Continue(next, resultingExecutionContext) =>
+      case Continue(next, resultingExecutionContext) =>
 
-          // Clean attempts info for retries
-          val currentExecutionContext = resultingExecutionContext.unset(TaskAttemptsKey)
+        repository.updateSession(session.running(next, resultingExecutionContext.variables)).fold(onFailure, { session =>
 
           // On Continue Event
-          eventListeners.foreach(_.onContinue(session.sessionId, currentExecutionContext, task.id, next.id))
+          eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, next.id))
 
           // Execute next Task
-          execute(next, currentSession, currentExecutionContext)
+          execute(next, session, resultingExecutionContext)
 
-        case SkipAndContinue(next) =>
+        })
 
-          // Clean attempts info for retries and Skip flag
-          val currentExecutionContext = executionContext.unset(TaskAttemptsKey).unset(SkipableKey)
+      case SkipAndContinue(next) =>
+
+        repository.updateSession(session.running(next, executionContext.variables)).fold(onFailure, { session =>
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
-            l.onSkip(session.sessionId, currentExecutionContext, task.id, next.id)
-            l.onContinue(session.sessionId, currentExecutionContext, task.id, next.id)
+            l.onSkip(session.sessionId, executionContext, task.id, next.id)
+            l.onContinue(session.sessionId, executionContext, task.id, next.id)
           })
 
           // Execute next Task
-          execute(next, currentSession, currentExecutionContext)
+          execute(next, session, executionContext)
 
-        case Block =>
+        })
 
-          repository.updateSession(currentSession.blocked(task)).fold(onFailure, { session =>
+      case Block =>
 
-            // On Block Event
-            eventListeners.foreach(_.onBlock(session.sessionId, executionContext, task.id))
+        repository.updateSession(session.blocked(task)).fold(onFailure, { session =>
 
-            Right(ExecutionResult(session, executionContext, task))
+          // On Block Event
+          eventListeners.foreach(_.onBlock(session.sessionId, executionContext, task.id))
 
-          })
+          Right(ExecutionResult(session, executionContext, task))
 
-        case Finish =>
+        })
 
-          repository.updateSession(currentSession.finished(task)).fold(onFailure, { session =>
+      case Finish =>
 
-            // On Finish Event
-            eventListeners.foreach(_.onFinish(session.sessionId, executionContext, task.id))
+        repository.updateSession(session.finished(task)).fold(onFailure, { session =>
 
-            Right(ExecutionResult(session, executionContext, task))
+          // On Finish Event
+          eventListeners.foreach(_.onFinish(session.sessionId, executionContext, task.id))
 
-          })
+          Right(ExecutionResult(session, executionContext, task))
 
-        case OnError(cause, Some(attemptsInfo)) =>
+        })
 
-          val currentExecutionContext = executionContext.set(TaskAttemptsKey, attemptsInfo)
+      case ToRetry(cause, nextRetry) =>
 
-          val sessionToUpdate = attemptsInfo.nextRetry match {
-                                  case Some(nextRetryDate) =>
+        repository.updateSession(session.toRetry(task, cause, nextRetry)).fold(onFailure, { session =>
 
-                                    // On Schedule Retry Event
-                                    eventListeners.foreach(_.onScheduleRetry(session.sessionId, attemptsInfo.quantity, nextRetryDate, currentExecutionContext, task.id))
+          // On ToRetry Event
+          session.taskAttempts.foreach { taskAttempts =>
+            eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.id, cause, taskAttempts))
+          }
 
-                                    currentSession.toRetry(task, cause)
+          Left(ExecutionError(session, task, cause))
 
-                                  case None => currentSession.onError(task, cause)
-                                }
+        })
 
-          // TODO: if repo fails I lost original cause
-          repository.updateSession(sessionToUpdate).fold(onFailure, { session =>
+      case OnError(cause) =>
 
-            // On Error Event
-            eventListeners.foreach(_.onError(session.sessionId, currentExecutionContext, task.id, cause))
+        repository.updateSession(session.onError(task, cause)).fold(onFailure, { session =>
 
-            Left(ExecutionError(session, task, cause))
+          // On Error Event
+          eventListeners.foreach(_.onError(session.sessionId, executionContext, task.id, cause))
 
-          })
+          Left(ExecutionError(session, task, cause))
 
-        case OnError(cause, _) =>
-
-          // TODO: if repo fails I lost original cause
-          repository.updateSession(currentSession.onError(task, cause)).fold(onFailure, { session =>
-
-            // On Error Event
-            eventListeners.foreach(_.onError(session.sessionId, executionContext, task.id, cause))
-
-            Left(ExecutionError(session, task, cause))
-
-          })
-
-      }
+        })
 
     }
-
-    def onFailure(cause: Throwable): ErrorOr[ExecutionResult] = Left(ExecutionError(session, task, cause))
-
-    // Update Session to Running Status and execute it
-    repository.updateSession(session.running(task, executionContext.variables)).fold(onFailure, onSuccess)
 
   }
 
@@ -251,10 +239,9 @@ trait Workflow {
     tasks(initialTask, Nil)
   }
 
-  private def checkWorkflowConsistency: Unit = {
-    val groups = tasks.groupBy(_.id).collect{case (k, v) if v.size > 1 => (k, v.size)}
-    if(groups.isEmpty) ()
-    else throw new IllegalStateException(s"There are repeated Tasks: $groups. Workflow can't be constructed")
+  private def checkWorkflowConsistency(): Unit = {
+    val groups = tasks.groupBy(_.id).collect { case (k, v) if v.size > 1 => (k, v.size) }
+    if (groups.nonEmpty) throw new IllegalStateException(s"There are repeated Tasks: $groups. Workflow can't be constructed")
   }
 
 }
