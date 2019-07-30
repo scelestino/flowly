@@ -52,7 +52,7 @@ class ExecutionTaskSpec extends Specification {
     "error if execution was unsuccessful" in new TasksContext {
       val task = ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
       task.execute("session1", ec) match {
-        case OnError(TestException(message), _) => message must_== "execution error"
+        case OnError(TestException(message)) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
       }
     }

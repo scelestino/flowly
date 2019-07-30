@@ -14,6 +14,7 @@ lazy val `flowly-core` = project
     name := "flowly-core",
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % "4.6.0" % "test",
+      "org.specs2" %% "specs2-mock" % "4.6.0" % "test",
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion % "test",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion % "test",
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion % "test"
