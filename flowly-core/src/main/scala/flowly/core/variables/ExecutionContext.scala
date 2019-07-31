@@ -16,7 +16,7 @@
 
 package flowly.core.variables
 
-import flowly.core.{ErrorOr, KeyNotFound}
+import flowly.core.{ErrorOr, KeyNotFound, Variables}
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.serialization.Serializer
@@ -37,6 +37,8 @@ trait ReadableExecutionContext {
 
   def exists[T: Manifest](key: Key[T], f: T => Boolean): Boolean
 
+  def forall[T: Manifest](key: Key[T], f: T => Boolean): Boolean
+
 }
 
 /**
@@ -48,7 +50,7 @@ trait ReadableExecutionContext {
   *
   * @param variables variables storage
   */
-class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val variables: Map[String, Any], serializer: Serializer) extends ReadableExecutionContext {
+class ExecutionContext private[flowly](sessionId: SessionId, val variables: Variables, serializer: Serializer) extends ReadableExecutionContext {
 
   def get[T: Manifest](key: Key[T]): Option[T] = variables.get(key.identifier).map(serializer.deepCopy[T])
 
@@ -60,17 +62,11 @@ class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val
 
   def exists[T: Manifest](key: Key[T], f: T => Boolean): Boolean = get(key).exists(f)
 
+  def forall[T: Manifest](key: Key[T], f: T => Boolean): Boolean = get(key).forall(f)
+
   def set[T: Manifest](key: Key[T], value: T): ExecutionContext = new ExecutionContext(sessionId, variables.updated(key.identifier, serializer.deepCopy(value)), serializer)
 
   def unset(key: Key[_]): ExecutionContext = new ExecutionContext(sessionId, variables.removed(key.identifier), serializer)
-
-  /**
-    * Merge two Variables content (second overrides first one)
-    *
-    * @param v another Variables object
-    * @return result of merging between both variables
-    */
-  private[flowly] def merge(v: Map[String, Any]): ExecutionContext = new ExecutionContext(sessionId: SessionId, variables ++ v, serializer)
 
 }
 

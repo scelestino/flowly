@@ -28,7 +28,7 @@ import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
   */
 trait BlockingTask extends SingleTask {
 
-  protected def condition(variables: ReadableExecutionContext): Boolean
+  protected def condition(executionContext: ReadableExecutionContext): Boolean
 
   final private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
     if (condition(executionContext)) Continue(next, executionContext) else Block

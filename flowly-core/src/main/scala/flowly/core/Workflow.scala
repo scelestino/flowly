@@ -21,7 +21,7 @@ import flowly.core.repository.Repository
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.basic.Task
-import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, ToRetry, puchi}
+import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, ToRetry}
 import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
 
 
@@ -86,21 +86,19 @@ trait Workflow {
     //Are params allowed?
     _ <- if(currentTask.accept(params.toKeys)) Right(true) else Left(ParamsNotAllowed(params))
 
+    // Set the session as running
+    runningSession <- repository.updateSession(session.resume(currentTask, params))
+
+    // Create Execution Context
     executionContext = executionContextFactory.create(session)
 
-    // Merge old and new Variables
-    currentExecutionContext = executionContext.merge(params.toVariables)
-
     // On Start or Resume Event
-    _ = session.lastExecution.fold(eventListeners.foreach(_.onStart(sessionId, currentExecutionContext)) ) { _ =>
-      eventListeners.foreach(_.onResume(sessionId, currentExecutionContext))
+    _ = session.lastExecution.fold(eventListeners.foreach(_.onStart(sessionId, executionContext)) ) { _ =>
+      eventListeners.foreach(_.onResume(sessionId, executionContext))
     }
 
-    // Set the session as running
-    runningSession <- repository.updateSession(session.resume(currentTask, executionContext.variables))
-
     // Execute from Current Task
-    result <- execute(currentTask, runningSession, currentExecutionContext)
+    result <- execute(currentTask, runningSession, executionContext)
 
   } yield result
 
@@ -118,7 +116,7 @@ trait Workflow {
 
       case Continue(next, resultingExecutionContext) =>
 
-        repository.updateSession(session.continue(next, resultingExecutionContext.variables)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(next, resultingExecutionContext)).fold(onFailure, { session =>
 
           // On Continue Event
           eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, next.id))
@@ -130,7 +128,7 @@ trait Workflow {
 
       case SkipAndContinue(next) =>
 
-        repository.updateSession(session.continue(next, executionContext.variables)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(next, executionContext)).fold(onFailure, { session =>
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
@@ -192,27 +190,6 @@ trait Workflow {
     }
 
   }
-
-  /**
-    * Cancel an instance of Workflow, it can't be executed again
-    *
-    * @param sessionId session id
-    * @return session id
-    */
-  def cancel(sessionId: SessionId, reason: String): ErrorOr[SessionId] = {
-
-    for {
-
-      session <- repository.getSession(sessionId)
-
-      result <- repository.updateSession(session.cancelled(reason))
-
-      // On Cancellation Event
-      _ = eventListeners.foreach(_.onCancellation(sessionId, reason, executionContextFactory.create(session), session.lastExecution.map(_.taskId)))
-
-    } yield result
-
-  }.map(_.sessionId)
 
   /**
     * It returns Variables for a given session id

@@ -20,4 +20,6 @@ package object core {
 
   type ErrorOr[A] = Either[Throwable, A]
 
+  type Variables = Map[String, Any]
+
 }

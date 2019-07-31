@@ -19,19 +19,21 @@ package flowly.core.repository.model
 import java.time.{Instant, LocalDateTime}
 import java.util.UUID
 
+import flowly.core.{Param, Variables}
 import flowly.core.repository.model.Session.{SessionId, Status}
 import flowly.core.repository.model.Status._
 import flowly.core.tasks.basic.Task
 import flowly.core.tasks.model.TaskAttempts
+import flowly.core.variables.ExecutionContext
 
-case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecution: Option[Execution], taskAttempts:Option[TaskAttempts], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status, version: Long) {
+case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], taskAttempts:Option[TaskAttempts], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status, version: Long) {
 
-  def resume(task: Task, variables: Map[String, Any]): Session = {
-    copy(lastExecution = Option(Execution(task.id)), variables = variables, status = RUNNING, taskAttempts = taskAttempts.map(_.newAttempt()))
+  def resume(task: Task, params: List[Param]): Session = {
+    copy(lastExecution = Option(Execution(task.id)), variables = variables ++ params.toVariables, status = RUNNING, taskAttempts = taskAttempts.map(_.newAttempt()))
   }
 
-  def continue(task: Task, variables: Map[String, Any]): Session = {
-    copy(lastExecution = Option(Execution(task.id)), variables = variables, status = RUNNING, taskAttempts = None)
+  def continue(task: Task, executionContext: ExecutionContext): Session = {
+    copy(lastExecution = Option(Execution(task.id)), variables = executionContext.variables, status = RUNNING, taskAttempts = None)
   }
 
   def blocked(task: Task): Session = {
@@ -50,10 +52,6 @@ case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecut
     copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = TO_RETRY, taskAttempts = Option(taskAttempts.getOrElse(TaskAttempts()).withNextRetry(nextRetry)))
   }
 
-  def cancelled(reason: String): Session = {
-    copy(cancellation = Option(Cancellation(reason)), status = CANCELLED, taskAttempts = None)
-  }
-
   def isExecutable: Boolean = status match {
     case RUNNING | FINISHED | CANCELLED => false
     case _ => true
@@ -66,11 +64,11 @@ object Session {
   type SessionId = String
   type Status    = String
 
-  def apply(id: SessionId, variables: Map[String, Any]): Session = {
+  def apply(id: SessionId, variables: Variables): Session = {
     new Session(id, variables, None, None, None, LocalDateTime.now, CREATED, 0L)
   }
 
-  def apply(variables: Map[String, Any]): Session = apply(UUID.randomUUID.toString, variables)
+  def apply(variables: Variables): Session = apply(UUID.randomUUID.toString, variables)
 }
 
 case class Execution(taskId: String, message:Option[String], at: Instant)

@@ -32,7 +32,7 @@ trait ExecutionTask extends SingleTask {
     case throwable: Throwable => OnError(throwable)
   }
 
-  protected def perform(sessionId: String, variables: ExecutionContext): ErrorOr[ExecutionContext]
+  protected def perform(sessionId: String, executionContext: ExecutionContext): ErrorOr[ExecutionContext]
 
   override def allowedKeys: List[Key[_]] = List.empty
 

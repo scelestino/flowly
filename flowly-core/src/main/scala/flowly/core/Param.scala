@@ -30,15 +30,13 @@ object Param {
 
   def apply[A](key: Key[A], value: A): Param = new Param(key, value)
 
-//  def unapply(param: Param): Option[(String, Any)] = Some(param.key -> param.value)
-
   implicit def tuple2Param[A](keyValue: (Key[A], A)): Param = keyValue match {
     case (key, value) => Param(key, value)
   }
 
   implicit class ParamSeqOps(params: Seq[Param]) {
     private[flowly] def toKeys: List[Key[_]] = params.map(_.key).toList
-    private[flowly] def toVariables: Map[String, Any] = params.map(p => (p.key.identifier, p.value)).toMap
+    private[flowly] def toVariables: Variables = params.map(p => (p.key.identifier, p.value)).toMap
   }
 
 }
