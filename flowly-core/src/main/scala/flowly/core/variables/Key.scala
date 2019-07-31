@@ -36,9 +36,5 @@ import scala.reflect.ClassTag
   */
 abstract class Key[A: ClassTag]() {
   this: Product =>
-
   final def identifier: String = this.toString
-
-  private[flowly] def allowedType(value: Any): Boolean = implicitly[ClassTag[A]].runtimeClass.isInstance(value)
-
 }

@@ -16,8 +16,6 @@
 
 package flowly.core
 
-import java.time.Instant
-
 import flowly.core.events.EventListener
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.model.TaskAttempts

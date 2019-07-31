@@ -37,8 +37,6 @@ trait ReadableExecutionContext {
 
   def exists[T: Manifest](key: Key[T], f: T => Boolean): Boolean
 
-  def vars: Map[String, Any]
-
 }
 
 /**
@@ -52,7 +50,7 @@ trait ReadableExecutionContext {
   */
 class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val variables: Map[String, Any], serializer: Serializer) extends ReadableExecutionContext {
 
-  def get[T: Manifest](key: Key[T]): Option[T] = variables.get(key.identifier).map(_.asInstanceOf[T]).map(serializer.deepCopy[T])
+  def get[T: Manifest](key: Key[T]): Option[T] = variables.get(key.identifier).map(serializer.deepCopy[T])
 
   def getOrElse[T: Manifest](key: Key[T], orElse: => T): T = get(key).getOrElse(orElse)
 
@@ -65,8 +63,6 @@ class ExecutionContext private[flowly](sessionId: SessionId, private[flowly] val
   def set[T: Manifest](key: Key[T], value: T): ExecutionContext = new ExecutionContext(sessionId, variables.updated(key.identifier, serializer.deepCopy(value)), serializer)
 
   def unset(key: Key[_]): ExecutionContext = new ExecutionContext(sessionId, variables.removed(key.identifier), serializer)
-
-  def vars: Map[String, Any] = serializer.deepCopy(variables)
 
   /**
     * Merge two Variables content (second overrides first one)

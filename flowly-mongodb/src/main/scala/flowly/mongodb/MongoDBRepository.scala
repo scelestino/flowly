@@ -68,9 +68,9 @@ class MongoDBRepository(
       update.put("$inc", new Document("version", 1))
 
       // Condition: there is a session with the same sessionId and version
-      val query = Map(
-        "sessionId" -> session.sessionId.asInstanceOf[Object],
-        "version" -> session.version.asInstanceOf[Object]
+      val query = Map[String, AnyRef](
+        "sessionId" -> session.sessionId,
+        "version" -> java.lang.Long.valueOf(session.version)
       ).asJava
 
       collection.findAndModify(new Document(query), new Document(), new Document(), collection.serializeFields(update), true, false)

@@ -30,7 +30,7 @@ case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecut
     copy(lastExecution = Option(Execution(task.id)), variables = variables, status = RUNNING, taskAttempts = taskAttempts.map(_.newAttempt()))
   }
 
-  def running(task: Task, variables: Map[String, Any]): Session = {
+  def continue(task: Task, variables: Map[String, Any]): Session = {
     copy(lastExecution = Option(Execution(task.id)), variables = variables, status = RUNNING, taskAttempts = None)
   }
 
@@ -47,7 +47,7 @@ case class Session(sessionId: SessionId, variables: Map[String, Any], lastExecut
   }
 
   def toRetry(task: Task, throwable: Throwable, nextRetry: Instant): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = TO_RETRY, taskAttempts = Option(taskAttempts.getOrElse(TaskAttempts()).withNextRetry(nextRetry)))
+    copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = TO_RETRY, taskAttempts = Option(taskAttempts.getOrElse(TaskAttempts()).withNextRetry(nextRetry)))
   }
 
   def cancelled(reason: String): Session = {
@@ -73,14 +73,15 @@ object Session {
   def apply(variables: Map[String, Any]): Session = apply(UUID.randomUUID.toString, variables)
 }
 
-case class Execution(taskId: String, at: LocalDateTime)
+case class Execution(taskId: String, message:Option[String], at: Instant)
 
 object Execution {
-  def apply(taskId: String): Execution = new Execution(taskId, LocalDateTime.now)
+  def apply(taskId: String): Execution = new Execution(taskId, None, Instant.now)
+  def apply(taskId: String, message:String): Execution = new Execution(taskId, Option(message), Instant.now)
 }
 
-case class Cancellation(reason: String, at: LocalDateTime)
+case class Cancellation(reason: String, at: Instant)
 
 object Cancellation {
-  def apply(reason: String): Cancellation = new Cancellation(reason, LocalDateTime.now)
+  def apply(reason: String): Cancellation = new Cancellation(reason, Instant.now)
 }

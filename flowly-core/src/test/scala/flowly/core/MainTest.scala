@@ -95,9 +95,7 @@ object MainTest extends App {
   } yield result4
 
   result match {
-
     case Right(r) => val v: Boolean = r.executionContext.get(Key3).get
-                     println(s"THE RESULT CONTAINS ${r.executionContext.vars}")
     case Left(ex) => println(ex)
   }
 

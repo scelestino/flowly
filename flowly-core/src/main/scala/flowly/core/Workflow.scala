@@ -21,14 +21,14 @@ import flowly.core.repository.Repository
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.basic.Task
-import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, ToRetry}
+import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, ToRetry, puchi}
 import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
 
 
 trait Workflow {
 
   //Validate workflow consistency when constructed
-  checkWorkflowConsistency()
+  checkConsistency()
 
   //TODO: It could be useful to validate that current open sessions in DB are blocked in valid tasks for the current Workflow.
 
@@ -48,7 +48,7 @@ trait Workflow {
     */
   def init(params: Param*): ErrorOr[SessionId] = {
 
-    repository.insertSession(Session(params.toVariables)).map { session =>
+    repository.insertSession(Session(params.toList.toVariables)).map { session =>
 
       // On Initialization Event
       eventListeners.foreach(_.onInitialization(session.sessionId, session.variables))
@@ -66,7 +66,16 @@ trait Workflow {
     * @param params    new workflow variables
     * @return execution result
     */
-  def execute(sessionId: SessionId, params: Param*): ErrorOr[ExecutionResult] = for {
+  def execute(sessionId: SessionId, params: Param*): ErrorOr[ExecutionResult] = execute(sessionId, params.toList)
+
+  /**
+    * Execute an instance of [[Workflow]] form its current [[Task]] with the given params
+    *
+    * @param sessionId session id
+    * @param params    new workflow variables
+    * @return execution result
+    */
+  def execute(sessionId: SessionId, params: List[Param]): ErrorOr[ExecutionResult] = for {
 
     // Get Session, can be executed?
     session <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
@@ -75,22 +84,20 @@ trait Workflow {
     currentTask <- currentTask(session)
 
     //Are params allowed?
-    _ <- currentTask.accept(params.toList)
+    _ <- if(currentTask.accept(params.toKeys)) Right(true) else Left(ParamsNotAllowed(params))
 
     executionContext = executionContextFactory.create(session)
-
-    // On Start or Resume Event
-    _ = if (currentTask == initialTask && session.lastExecution.isEmpty) eventListeners.foreach(_.onStart(sessionId, executionContext))
-    else eventListeners.foreach(_.onResume(sessionId, executionContext))
 
     // Merge old and new Variables
     currentExecutionContext = executionContext.merge(params.toVariables)
 
+    // On Start or Resume Event
+    _ = session.lastExecution.fold(eventListeners.foreach(_.onStart(sessionId, currentExecutionContext)) ) { _ =>
+      eventListeners.foreach(_.onResume(sessionId, currentExecutionContext))
+    }
+
     // Set the session as running
     runningSession <- repository.updateSession(session.resume(currentTask, executionContext.variables))
-
-    // On Start Event
-    _ = if(currentTask == initialTask) eventListeners.foreach(_.onStart(sessionId, currentExecutionContext))
 
     // Execute from Current Task
     result <- execute(currentTask, runningSession, currentExecutionContext)
@@ -99,7 +106,6 @@ trait Workflow {
 
   private def currentTask(session: Session): ErrorOr[Task] = {
     val taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
-
     tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
   }
 
@@ -112,7 +118,7 @@ trait Workflow {
 
       case Continue(next, resultingExecutionContext) =>
 
-        repository.updateSession(session.running(next, resultingExecutionContext.variables)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(next, resultingExecutionContext.variables)).fold(onFailure, { session =>
 
           // On Continue Event
           eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, next.id))
@@ -124,7 +130,7 @@ trait Workflow {
 
       case SkipAndContinue(next) =>
 
-        repository.updateSession(session.running(next, executionContext.variables)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(next, executionContext.variables)).fold(onFailure, { session =>
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
@@ -239,9 +245,12 @@ trait Workflow {
     tasks(initialTask, Nil)
   }
 
-  private def checkWorkflowConsistency(): Unit = {
-    val groups = tasks.groupBy(_.id).collect { case (k, v) if v.size > 1 => (k, v.size) }
-    if (groups.nonEmpty) throw new IllegalStateException(s"There are repeated Tasks: $groups. Workflow can't be constructed")
+  /**
+    * Check if there are duplicated tasks
+    */
+  private def checkConsistency(): Unit = {
+    val duplicated = tasks.map(_.id).diff(tasks.map(_.id).distinct)
+    if (duplicated.nonEmpty) throw new IllegalStateException(s"There are repeated Tasks: $duplicated. Workflow can't be constructed")
   }
 
 }

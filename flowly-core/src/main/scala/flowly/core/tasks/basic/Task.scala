@@ -20,21 +20,15 @@ trait Task {
   private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult
 
   /**
-    * Check if all the keys are allowed by this task
-    */
-  final private[flowly] def accept(params: List[Param]): ErrorOr[Unit] = {
-    if(params.forall{case Param(key, value) => allowedKeys.exists( k => k.identifier == key && k.allowedType(value))}) {
-      Right()
-    } else {
-      Left(ParamsNotAllowed(allowedKeys.map(_.identifier), params))
-    }
-  }
-
-
-  /**
     * A list of tasks that follows this task
     */
   private[flowly] def followedBy: List[Task]
+
+  /**
+    * Check if all the keys are allowed by this task
+    */
+  def accept(keys: List[Key[_]]): Boolean = keys.forall(allowedKeys.contains)
+
 
   /**
     * A list of keys allowed by this task. It means that a session on this task can be
