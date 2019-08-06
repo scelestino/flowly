@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.repository.InMemoryRepository
 import flowly.core.tasks.basic.{BlockingDisjunctionTask, DisjunctionTask, FinishTask, Task, BlockingTask, ExecutionTask}
-import flowly.core.variables.{ExecutionContextFactory, Key}
+import flowly.core.context.{ExecutionContextFactory, Key}
 
 
 //TODO: Convert into tests with validations

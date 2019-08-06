@@ -1,7 +1,7 @@
 package flowly.core.tasks.basic
 
 import flowly.core.tasks.model.TaskResult
-import flowly.core.variables.{ExecutionContext, Key}
+import flowly.core.context.{ExecutionContext, Key}
 import flowly.core.{ErrorOr, Param, ParamsNotAllowed}
 
 /**
@@ -28,7 +28,6 @@ trait Task {
     * Check if all the keys are allowed by this task
     */
   def accept(keys: List[Key[_]]): Boolean = keys.forall(allowedKeys.contains)
-
 
   /**
     * A list of keys allowed by this task. It means that a session on this task can be

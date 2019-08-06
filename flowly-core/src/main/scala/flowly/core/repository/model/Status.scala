@@ -34,8 +34,6 @@ object Status {
 
   val BLOCKED: Status = "BLOCKED"
 
-  val CANCELLED: Status = "CANCELLED"
-
   val TO_RETRY: Status = "TO_RETRY"
 
 }

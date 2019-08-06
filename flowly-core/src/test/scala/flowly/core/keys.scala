@@ -16,7 +16,7 @@
 
 package flowly.core
 
-import flowly.core.variables.Key
+import flowly.core.context.Key
 
 case object StringKey extends Key[String]
 case object BooleanKey extends Key[Boolean]

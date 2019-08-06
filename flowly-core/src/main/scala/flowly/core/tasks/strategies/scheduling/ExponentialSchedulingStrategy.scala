@@ -2,18 +2,14 @@ package flowly.core.tasks.strategies.scheduling
 
 import java.time.Instant
 
-import flowly.core.tasks.model.TaskAttempts
-import flowly.core.variables.ReadableExecutionContext
+import flowly.core.context.ReadableExecutionContext
+import flowly.core.repository.model.Attempts
+import flowly.core.tasks.compose.SchedulingStrategy
 
-class ExponentialSchedulingStrategy(secondsForFirstRetry: Int) extends SchedulingStrategy {
+class ExponentialSchedulingStrategy(secondsToRetry: Int, upperBound:Int) extends SchedulingStrategy {
 
-  override def nextRetryDate(taskAttempts: TaskAttempts, executionContext: ReadableExecutionContext): Instant = {
-//    taskAttempts.lastAttempt.plusSeconds(Math.pow(secondsForFirstRetry, taskAttempts.quantity).toLong)
-    ???
+  def nextRetry(executionContext: ReadableExecutionContext, attempts: Attempts): Instant = {
+    Instant.now.plusSeconds( secondsToRetry ^ attempts.quantity )
   }
 
-}
-
-object ExponentialSchedulingStrategy {
-  def apply(secondsForFirstRetry: Int): ExponentialSchedulingStrategy = new ExponentialSchedulingStrategy(secondsForFirstRetry)
 }

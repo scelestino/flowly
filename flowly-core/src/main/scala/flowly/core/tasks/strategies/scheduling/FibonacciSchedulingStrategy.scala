@@ -2,18 +2,20 @@ package flowly.core.tasks.strategies.scheduling
 
 import java.time.Instant
 
-import flowly.core.tasks.model.TaskAttempts
-import flowly.core.variables.ReadableExecutionContext
+import flowly.core.context.ReadableExecutionContext
+import flowly.core.repository.model.Attempts
+import flowly.core.tasks.compose.SchedulingStrategy
 
-class FibonacciSchedulingStrategy(secondsForFirstRetry: Int) extends SchedulingStrategy {
+import scala.annotation.tailrec
 
-  override def nextRetryDate(taskAttempts: TaskAttempts, executionContext: ReadableExecutionContext): Instant = {
-    val multiplier = getFibonacciNumber(taskAttempts.quantity)
-    //taskAttempts.lastAttempt.plusSeconds(multiplier * secondsForFirstRetry)
-    ???
+class FibonacciSchedulingStrategy(multiplier: Int, upperBound: Int) extends SchedulingStrategy {
+
+  def nextRetry(executionContext: ReadableExecutionContext, attempts: Attempts): Instant = {
+    Instant.now.plusSeconds( upperBound.min( multiplier * fibonacci(attempts.quantity) ))
   }
 
-  private def getFibonacciNumber(i: Int): Int = {
+  private def fibonacci(i: Int): Int = {
+    @tailrec
     def fibTail(i: Int, a: Int, b: Int): Int = i match {
       case 0 => a
       case _ => fibTail( i - 1, b, a + b )
@@ -21,8 +23,4 @@ class FibonacciSchedulingStrategy(secondsForFirstRetry: Int) extends SchedulingS
     fibTail(i, 0, 1)
   }
 
-}
-
-object FibonacciSchedulingStrategy {
-  def apply(secondsForFirstRetry: Int): FibonacciSchedulingStrategy = new FibonacciSchedulingStrategy(secondsForFirstRetry)
 }

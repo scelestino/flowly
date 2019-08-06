@@ -1,7 +1,7 @@
 package flowly.core.tasks.basic
 
 import flowly.core.tasks.model.{Finish, TaskResult}
-import flowly.core.variables.{ExecutionContext, Key}
+import flowly.core.context.{ExecutionContext, Key}
 
 /**
   * An instance of this [[Task]] is need be to used to finish a workflow execution.
@@ -14,10 +14,10 @@ import flowly.core.variables.{ExecutionContext, Key}
   */
 case class FinishTask(override val id: String) extends Task {
 
-  final private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = Finish
+  def allowedKeys: List[Key[_]] = Nil
 
-  final private[flowly] def followedBy: List[Task] = Nil
+  private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = Finish
 
-  override def allowedKeys: List[Key[_]] = List.empty
+  private[flowly] def followedBy: List[Task] = Nil
 
 }

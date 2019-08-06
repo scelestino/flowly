@@ -2,7 +2,7 @@ package flowly.core.workflow
 
 import flowly.core.repository.InMemoryRepository
 import flowly.core.tasks.basic.{ExecutionTask, FinishTask, Task}
-import flowly.core.variables.ExecutionContextFactory
+import flowly.core.context.ExecutionContextFactory
 import flowly.core.{Context, Workflow}
 import org.specs2.mutable.Specification
 

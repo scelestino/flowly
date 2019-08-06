@@ -19,67 +19,67 @@ package flowly.core.repository.model
 import java.time.{Instant, LocalDateTime}
 import java.util.UUID
 
-import flowly.core.{Param, Variables}
 import flowly.core.repository.model.Session.{SessionId, Status}
 import flowly.core.repository.model.Status._
 import flowly.core.tasks.basic.Task
-import flowly.core.tasks.model.TaskAttempts
-import flowly.core.variables.ExecutionContext
+import flowly.core.context.WritableExecutionContext
+import flowly.core.{Param, Variables}
 
-case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], taskAttempts:Option[TaskAttempts], cancellation: Option[Cancellation], createdAt: LocalDateTime, status: Status, version: Long) {
+case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], attempts:Option[Attempts], createdAt: LocalDateTime, status: Status, version: Long) {
 
   def resume(task: Task, params: List[Param]): Session = {
-    copy(lastExecution = Option(Execution(task.id)), variables = variables ++ params.toVariables, status = RUNNING, taskAttempts = taskAttempts.map(_.newAttempt()))
+    copy(lastExecution = Option(Execution(task.id)), variables = variables ++ params.toVariables, status = RUNNING, attempts = attempts.map(_.newAttempt()) )
   }
 
-  def continue(task: Task, executionContext: ExecutionContext): Session = {
-    copy(lastExecution = Option(Execution(task.id)), variables = executionContext.variables, status = RUNNING, taskAttempts = None)
+  def continue(task: Task, executionContext: WritableExecutionContext): Session = {
+    copy(lastExecution = Option(Execution(task.id)), variables = executionContext.variables, status = RUNNING, attempts = None)
   }
 
   def blocked(task: Task): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = BLOCKED, taskAttempts = None)
+    copy(lastExecution = Option(Execution(task.id)), status = BLOCKED, attempts = None)
   }
 
   def finished(task: Task): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = FINISHED, taskAttempts = None)
+    copy(lastExecution = Option(Execution(task.id)), status = FINISHED, attempts = None)
   }
 
   def onError(task: Task, throwable: Throwable): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = ERROR, taskAttempts = Option(taskAttempts.getOrElse(TaskAttempts()).stopRetrying()))
+    copy(lastExecution = Option(Execution(task.id)), status = ERROR, attempts = attempts.map(_.stopRetrying()))
   }
 
-  def toRetry(task: Task, throwable: Throwable, nextRetry: Instant): Session = {
-    copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = TO_RETRY, taskAttempts = Option(taskAttempts.getOrElse(TaskAttempts()).withNextRetry(nextRetry)))
+  def toRetry(task: Task, throwable: Throwable, attempts: Attempts): Session = {
+    copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = TO_RETRY, attempts = Option(attempts))
   }
 
   def isExecutable: Boolean = status match {
-    case RUNNING | FINISHED | CANCELLED => false
+    case RUNNING | FINISHED => false
     case _ => true
   }
 
 }
-
 object Session {
 
   type SessionId = String
   type Status    = String
 
   def apply(id: SessionId, variables: Variables): Session = {
-    new Session(id, variables, None, None, None, LocalDateTime.now, CREATED, 0L)
+    new Session(id, variables, None, None, LocalDateTime.now, CREATED, 0L)
   }
-
   def apply(variables: Variables): Session = apply(UUID.randomUUID.toString, variables)
+
 }
 
 case class Execution(taskId: String, message:Option[String], at: Instant)
-
 object Execution {
   def apply(taskId: String): Execution = new Execution(taskId, None, Instant.now)
   def apply(taskId: String, message:String): Execution = new Execution(taskId, Option(message), Instant.now)
 }
 
-case class Cancellation(reason: String, at: Instant)
-
-object Cancellation {
-  def apply(reason: String): Cancellation = new Cancellation(reason, Instant.now)
+case class Attempts(quantity: Int, firstAttempt: Instant, nextRetry: Option[Instant]) {
+  def newAttempt():Attempts = copy(quantity = quantity + 1)
+  def stopRetrying(): Attempts = copy(nextRetry = None)
+  def withNextRetry(nextRetry: Instant): Attempts = copy(nextRetry = Option(nextRetry))
+}
+object Attempts {
+  def apply(): Attempts = Attempts(quantity = 1, firstAttempt = Instant.now(), None)
 }

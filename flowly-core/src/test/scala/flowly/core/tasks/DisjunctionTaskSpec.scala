@@ -41,7 +41,7 @@ class DisjunctionTaskSpec extends Specification {
 
     "error if there no valid condition" in new TasksContext {
       val task = basic.DisjunctionTask("1", (_.contains(IntKey), FinishTask("2")))
-      task.execute("session1", ec) must_== OnError(DisjunctionTaskError())
+      task.execute("session1", ec) must_== OnError(DisjunctionTaskError("1"))
     }
 
     "error if execution was unsuccessful" in new TasksContext {

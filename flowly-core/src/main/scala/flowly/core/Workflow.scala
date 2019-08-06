@@ -21,8 +21,8 @@ import flowly.core.repository.Repository
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.basic.Task
-import flowly.core.tasks.model.{Block, Continue, Finish, OnError, SkipAndContinue, ToRetry}
-import flowly.core.variables.{ExecutionContext, ExecutionContextFactory, Key}
+import flowly.core.tasks.model._
+import flowly.core.context.{ExecutionContextFactory, Key}
 
 
 trait Workflow {
@@ -83,7 +83,7 @@ trait Workflow {
     // Get Current Task
     currentTask <- currentTask(session)
 
-    //Are params allowed?
+    // Are params allowed?
     _ <- if(currentTask.accept(params.toKeys)) Right(true) else Left(ParamsNotAllowed(params))
 
     // Set the session as running
@@ -98,7 +98,7 @@ trait Workflow {
     }
 
     // Execute from Current Task
-    result <- execute(currentTask, runningSession, executionContext)
+    result <- execute(currentTask, runningSession)
 
   } yield result
 
@@ -107,37 +107,40 @@ trait Workflow {
     tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
   }
 
-  private def execute(task: Task, session: Session, executionContext: ExecutionContext): ErrorOr[ExecutionResult] = {
+  private def execute(task: Task, session: Session): ErrorOr[ExecutionResult] = {
 
     def onFailure(cause: Throwable): ErrorOr[ExecutionResult] = Left(ExecutionError(session, task, cause))
+
+    // Create Execution Context
+    val executionContext = executionContextFactory.create(session)
 
     // Execute Task
     task.execute(session.sessionId, executionContext) match {
 
-      case Continue(next, resultingExecutionContext) =>
+      case Continue(nextTask, resultingExecutionContext) =>
 
-        repository.updateSession(session.continue(next, resultingExecutionContext)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
 
           // On Continue Event
-          eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, next.id))
+          eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, nextTask.id))
 
           // Execute next Task
-          execute(next, session, resultingExecutionContext)
+          execute(nextTask, session)
 
         })
 
-      case SkipAndContinue(next) =>
+      case SkipAndContinue(nextTask) =>
 
-        repository.updateSession(session.continue(next, executionContext)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(nextTask, executionContext)).fold(onFailure, { session =>
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
-            l.onSkip(session.sessionId, executionContext, task.id, next.id)
-            l.onContinue(session.sessionId, executionContext, task.id, next.id)
+            l.onSkip(session.sessionId, executionContext, task.id, nextTask.id)
+            l.onContinue(session.sessionId, executionContext, task.id, nextTask.id)
           })
 
           // Execute next Task
-          execute(next, session, executionContext)
+          execute(nextTask, session)
 
         })
 
@@ -163,14 +166,12 @@ trait Workflow {
 
         })
 
-      case ToRetry(cause, nextRetry) =>
+      case ToRetry(cause, attempts) =>
 
-        repository.updateSession(session.toRetry(task, cause, nextRetry)).fold(onFailure, { session =>
+        repository.updateSession(session.toRetry(task, cause, attempts)).fold(onFailure, { session =>
 
           // On ToRetry Event
-          session.taskAttempts.foreach { taskAttempts =>
-            eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.id, cause, taskAttempts))
-          }
+          eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.id, cause, attempts))
 
           Left(ExecutionError(session, task, cause))
 
@@ -197,7 +198,7 @@ trait Workflow {
     * @param sessionId session id
     * @return Variables (read only)
     */
-  def variables(sessionId: SessionId): ErrorOr[Map[String, Any]] = repository.getSession(sessionId).map(_.variables)
+  def variables(sessionId: SessionId): ErrorOr[Variables] = repository.getSession(sessionId).map(_.variables)
 
   def currentAllowedKeys(sessionId: String): ErrorOr[List[Key[_]]] = for {
 

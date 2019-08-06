@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package flowly.core.variables
+package flowly.core.context
 
 import scala.reflect.ClassTag
 

@@ -18,7 +18,7 @@ package flowly.core.tasks.basic
 
 import flowly.core.DisjunctionTaskError
 import flowly.core.tasks.model.{Block, Continue, OnError, TaskResult}
-import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
+import flowly.core.context.{ExecutionContext, Key, ReadableExecutionContext}
 
 /**
   * An instance of this [[Task]] will choose a branch of execution between different paths based on given conditions.
@@ -28,28 +28,26 @@ import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
   */
 trait DisjunctionTask extends Task {
 
+  def allowedKeys: List[Key[_]] = Nil
+
   protected def branches: List[(ReadableExecutionContext => Boolean, Task)]
-
-  final private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = try {
-    next(variables) match {
-      case Some(next) => Continue(next, variables)
-      case None if blockOnNoCondition => Block
-      case None => OnError(DisjunctionTaskError())
-    }
-  } catch {
-    case throwable: Throwable => OnError(throwable)
-  }
-
-  final private[flowly] def followedBy: List[Task] = branches.collect { case (_, task) => task }
 
   /**
     * This task is going to block instead of fail when there are no conditions that match
     */
   protected def blockOnNoCondition = false
 
-  override def allowedKeys: List[Key[_]] = List.empty
+  private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
+    branches.collectFirst { case (condition, task) if condition(executionContext) => task } match {
+      case Some(next) => Continue(next, executionContext)
+      case None if blockOnNoCondition => Block
+      case None => OnError(DisjunctionTaskError(id))
+    }
+  } catch {
+    case throwable: Throwable => OnError(throwable)
+  }
 
-  private def next(variables: ReadableExecutionContext): Option[Task] = branches.collectFirst { case (condition, task) if condition(variables) => task }
+  private[flowly] def followedBy: List[Task] = branches.collect { case (_, task) => task }
 
 }
 

@@ -18,13 +18,19 @@ package flowly.core.tasks.basic
 
 import flowly.core.ErrorOr
 import flowly.core.tasks.model.{Continue, OnError, TaskResult}
-import flowly.core.variables.{ExecutionContext, Key}
+import flowly.core.context.{ExecutionContext, Key, WritableExecutionContext}
 
 /**
   * An instance of this [[Task]] will execute your code and can change the execution context.
   *
   */
-trait ExecutionTask extends SingleTask {
+trait ExecutionTask extends Task {
+
+  val next: Task
+
+  def allowedKeys: List[Key[_]] = Nil
+
+  protected def perform(sessionId: String, executionContext: WritableExecutionContext): ErrorOr[WritableExecutionContext]
 
   private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
     perform(sessionId, executionContext).fold(OnError, Continue(next, _))
@@ -32,21 +38,19 @@ trait ExecutionTask extends SingleTask {
     case throwable: Throwable => OnError(throwable)
   }
 
-  protected def perform(sessionId: String, executionContext: ExecutionContext): ErrorOr[ExecutionContext]
-
-  override def allowedKeys: List[Key[_]] = List.empty
+  private[flowly] def followedBy: List[Task] = next :: Nil
 
 }
 
 object ExecutionTask {
 
-  def apply(_id: String, _next: Task)(_perform: (String, ExecutionContext) => ErrorOr[ExecutionContext]): ExecutionTask = new ExecutionTask {
+  def apply(_id: String, _next: Task)(_perform: (String, WritableExecutionContext) => ErrorOr[WritableExecutionContext]): ExecutionTask = new ExecutionTask {
 
     override val id: String = _id
 
     val next: Task = _next
 
-    def perform(sessionId: String, executionContext: ExecutionContext): ErrorOr[ExecutionContext] = _perform(sessionId, executionContext)
+    def perform(sessionId: String, executionContext: WritableExecutionContext): ErrorOr[WritableExecutionContext] = _perform(sessionId, executionContext)
 
   }
 

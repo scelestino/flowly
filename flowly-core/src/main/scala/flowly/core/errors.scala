@@ -40,6 +40,6 @@ case class ParamsNotAllowed(params: List[Param]) extends Throwable
 
 case class RepositoryError()
 
-case class DisjunctionTaskError() extends Throwable
+case class DisjunctionTaskError(taskId:String) extends Throwable
 
 case class SerializationException(message: String, cause: Throwable) extends Throwable(message, cause)

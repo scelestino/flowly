@@ -17,7 +17,7 @@
 package flowly.core.tasks.basic
 
 import flowly.core.tasks.model.{Block, Continue, OnError, TaskResult}
-import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
+import flowly.core.context.{ExecutionContext, Key, ReadableExecutionContext}
 
 
 /**
@@ -26,15 +26,19 @@ import flowly.core.variables.{ExecutionContext, Key, ReadableExecutionContext}
   * Conditions can be setted throught the execution context.
   *
   */
-trait BlockingTask extends SingleTask {
+trait BlockingTask extends Task {
+
+  val next: Task
 
   protected def condition(executionContext: ReadableExecutionContext): Boolean
 
-  final private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
+  private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
     if (condition(executionContext)) Continue(next, executionContext) else Block
   } catch {
     case throwable: Throwable => OnError(throwable)
   }
+
+  private[flowly] def followedBy: List[Task] = next :: Nil
 
 }
 

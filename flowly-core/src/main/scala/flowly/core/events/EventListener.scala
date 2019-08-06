@@ -16,16 +16,17 @@
 
 package flowly.core.events
 
+import flowly.core.Variables
+import flowly.core.repository.model.Attempts
 import flowly.core.repository.model.Session.SessionId
-import flowly.core.tasks.model.TaskAttempts
-import flowly.core.variables.ReadableExecutionContext
+import flowly.core.context.ReadableExecutionContext
 
 /**
   * Interface for event handling (can be used for logging purpose)
   */
 trait EventListener {
 
-  def onInitialization(sessionId: SessionId, vars: Map[String, Any]): Unit
+  def onInitialization(sessionId: SessionId, vars: Variables): Unit
 
   def onStart(sessionId: SessionId, executionContext: ReadableExecutionContext): Unit
 
@@ -41,8 +42,6 @@ trait EventListener {
 
   def onError(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable): Unit
 
-  def onToRetry(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable, taskAttempts: TaskAttempts): Unit
-
-  def onCancellation(sessionId: SessionId, reason: String, executionContext: ReadableExecutionContext, currentTask: Option[String]): Unit
+  def onToRetry(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable, attempts: Attempts): Unit
 
 }

@@ -17,13 +17,13 @@
 package flowly.core
 
 import flowly.core.events.EventListener
+import flowly.core.repository.model.Attempts
 import flowly.core.repository.model.Session.SessionId
-import flowly.core.tasks.model.TaskAttempts
-import flowly.core.variables.ReadableExecutionContext
+import flowly.core.context.ReadableExecutionContext
 
 class DummyEventListener extends EventListener {
 
-  def onInitialization(sessionId: SessionId, vars: Map[String, Any]): Unit = {
+  def onInitialization(sessionId: SessionId, vars: Variables): Unit = {
     println(s"Init a new instance $sessionId")
   }
 
@@ -55,12 +55,8 @@ class DummyEventListener extends EventListener {
     println(s"session $sessionId task $currentTask with $cause")
   }
 
-  def onCancellation(sessionId: SessionId, reason: String, variables: ReadableExecutionContext, currentTask: Option[String]): Unit = {
-    println(s"session $sessionId was cancelled in task $currentTask")
-  }
-
-  def onToRetry(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable, taskAttempts: TaskAttempts): Unit = {
-    println(s"session $sessionId in task $currentTask is going to retry ${taskAttempts.nextRetry}")
+  def onToRetry(sessionId: SessionId, executionContext: ReadableExecutionContext, currentTask: String, cause: Throwable, attempts: Attempts): Unit = {
+    println(s"session $sessionId in task $currentTask is going to retry ${attempts.nextRetry}")
   }
 
 }

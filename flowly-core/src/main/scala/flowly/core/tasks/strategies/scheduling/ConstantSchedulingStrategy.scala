@@ -2,19 +2,14 @@ package flowly.core.tasks.strategies.scheduling
 
 import java.time.Instant
 
-import flowly.core.tasks.model.TaskAttempts
-import flowly.core.variables.ReadableExecutionContext
+import flowly.core.tasks.compose.SchedulingStrategy
+import flowly.core.context.ReadableExecutionContext
+import flowly.core.repository.model.Attempts
 
-class ConstantSchedulingStrategy(secondsBetweenRetries: Int) extends SchedulingStrategy {
+class ConstantSchedulingStrategy(secondsToRetry: Int) extends SchedulingStrategy {
 
-  override def nextRetryDate(taskAttempts: TaskAttempts, executionContext: ReadableExecutionContext): Instant = {
-    //taskAttempts.lastAttempt.plusSeconds(secondsBetweenRetries)
-    ???
-    // TODO: los comento por ahora
+  def nextRetry(executionContext: ReadableExecutionContext, attempts: Attempts): Instant = {
+    Instant.now.plusSeconds(secondsToRetry)
   }
 
-}
-
-object ConstantSchedulingStrategy {
-  def apply(secondsBetweenRetries: Int): ConstantSchedulingStrategy = new ConstantSchedulingStrategy(secondsBetweenRetries)
 }

@@ -16,7 +16,7 @@
 
 package flowly.core
 
-import flowly.core.variables.{Key, ExecutionContext}
+import flowly.core.context.{Key, ExecutionContext}
 
 import scala.language.implicitConversions
 

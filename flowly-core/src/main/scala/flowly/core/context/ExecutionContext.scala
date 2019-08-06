@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package flowly.core.variables
+package flowly.core.context
 
-import flowly.core.{ErrorOr, KeyNotFound, Variables}
-import flowly.core.repository.model.Session
-import flowly.core.repository.model.Session.SessionId
+import flowly.core.repository.model.{Attempts, Session}
 import flowly.core.serialization.Serializer
 import flowly.core.tasks.basic.{BlockingTask, DisjunctionTask, ExecutionTask}
+import flowly.core.{ErrorOr, KeyNotFound, Variables}
 
 /**
   * Read-only interface of Variables
@@ -39,6 +38,19 @@ trait ReadableExecutionContext {
 
   def forall[T: Manifest](key: Key[T], f: T => Boolean): Boolean
 
+  private[flowly] def variables: Variables
+
+}
+
+/**
+  * Writable interface of Variables
+  */
+trait WritableExecutionContext extends ReadableExecutionContext {
+
+  def set[T: Manifest](key: Key[T], value: T): WritableExecutionContext
+
+  def unset(key: Key[_]): WritableExecutionContext
+
 }
 
 /**
@@ -48,9 +60,8 @@ trait ReadableExecutionContext {
   *
   * After a successful task this context is saved in the repository in order to keep safe any modification.
   *
-  * @param variables variables storage
   */
-class ExecutionContext private[flowly](sessionId: SessionId, val variables: Variables, serializer: Serializer) extends ReadableExecutionContext {
+class ExecutionContext private[flowly](val variables: Variables, val attempts:Option[Attempts], serializer: Serializer) extends ReadableExecutionContext with WritableExecutionContext {
 
   def get[T: Manifest](key: Key[T]): Option[T] = variables.get(key.identifier).map(serializer.deepCopy[T])
 
@@ -64,12 +75,12 @@ class ExecutionContext private[flowly](sessionId: SessionId, val variables: Vari
 
   def forall[T: Manifest](key: Key[T], f: T => Boolean): Boolean = get(key).forall(f)
 
-  def set[T: Manifest](key: Key[T], value: T): ExecutionContext = new ExecutionContext(sessionId, variables.updated(key.identifier, serializer.deepCopy(value)), serializer)
+  def set[T: Manifest](key: Key[T], value: T): ExecutionContext = new ExecutionContext(variables.updated(key.identifier, serializer.deepCopy(value)), attempts, serializer)
 
-  def unset(key: Key[_]): ExecutionContext = new ExecutionContext(sessionId, variables.removed(key.identifier), serializer)
+  def unset(key: Key[_]): ExecutionContext = new ExecutionContext(variables.removed(key.identifier), attempts, serializer)
 
 }
 
 class ExecutionContextFactory(serializer: Serializer) {
-  def create(session: Session): ExecutionContext = new ExecutionContext(session.sessionId, session.variables, serializer)
+  def create(session: Session): ExecutionContext = new ExecutionContext(session.variables, session.attempts, serializer)
 }

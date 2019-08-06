@@ -16,10 +16,9 @@
 
 package flowly.core.tasks.model
 
-import java.time.Instant
-
+import flowly.core.repository.model.Attempts
 import flowly.core.tasks.basic.Task
-import flowly.core.variables.ExecutionContext
+import flowly.core.context.WritableExecutionContext
 
 /**
   * Interface of a [[Task]] execution result
@@ -32,7 +31,7 @@ trait TaskResult
   * @param nextTask  next task to be executed
   * @param executionContext current execution context
   */
-case class Continue(nextTask: Task, executionContext: ExecutionContext) extends TaskResult
+case class Continue(nextTask: Task, executionContext: WritableExecutionContext) extends TaskResult
 
 /**
   * Current workflow execution must be continued but current task was skipped
@@ -64,6 +63,6 @@ case class OnError(cause: Throwable) extends TaskResult
   * There was an unexpected error during current workflow execution but the task can be retried
   *
   * @param cause  error
-  * @param nextRetry next instant when this task should be retried
+  * @param attempts information about attempts
   */
-case class ToRetry(cause: Throwable, nextRetry:Instant) extends TaskResult
+case class ToRetry(cause: Throwable, attempts:Attempts) extends TaskResult
