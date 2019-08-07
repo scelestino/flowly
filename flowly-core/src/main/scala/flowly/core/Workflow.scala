@@ -109,10 +109,10 @@ trait Workflow {
 
   private def execute(task: Task, session: Session): ErrorOr[ExecutionResult] = {
 
-    def onFailure(cause: Throwable): ErrorOr[ExecutionResult] = Left(ExecutionError(session, task, cause))
-
     // Create Execution Context
     val executionContext = executionContextFactory.create(session)
+
+    def onFailure(cause: Throwable): ErrorOr[ExecutionResult] = Left(ExecutionError(session, task, executionContext, cause))
 
     // Execute Task
     task.execute(session.sessionId, executionContext) match {
@@ -173,7 +173,7 @@ trait Workflow {
           // On ToRetry Event
           eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.id, cause, attempts))
 
-          Left(ExecutionError(session, task, cause))
+          Left(ExecutionError(session, task, executionContext, cause))
 
         })
 
@@ -184,7 +184,7 @@ trait Workflow {
           // On Error Event
           eventListeners.foreach(_.onError(session.sessionId, executionContext, task.id, cause))
 
-          Left(ExecutionError(session, task, cause))
+          Left(ExecutionError(session, task, executionContext, cause))
 
         })
 

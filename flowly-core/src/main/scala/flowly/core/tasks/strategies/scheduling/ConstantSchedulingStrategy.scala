@@ -2,7 +2,6 @@ package flowly.core.tasks.strategies.scheduling
 
 import java.time.Instant
 
-import flowly.core.tasks.compose.SchedulingStrategy
 import flowly.core.context.ReadableExecutionContext
 import flowly.core.repository.model.Attempts
 

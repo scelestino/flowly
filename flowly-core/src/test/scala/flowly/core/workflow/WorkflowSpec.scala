@@ -1,9 +1,12 @@
 package flowly.core.workflow
 
-import flowly.core.repository.InMemoryRepository
+import flowly.core.repository.{InMemoryRepository, Repository}
 import flowly.core.tasks.basic.{ExecutionTask, FinishTask, Task}
-import flowly.core.context.ExecutionContextFactory
-import flowly.core.{Context, Workflow}
+import flowly.core.context.{ExecutionContextFactory, ReadableExecutionContext, WritableExecutionContext}
+import flowly.core.tasks.compose.{Condition, Retry}
+import flowly.core.tasks.strategies.scheduling.ConstantSchedulingStrategy
+import flowly.core.tasks.strategies.stopping.QuantityStoppingStrategy
+import flowly.core.{Context, ExecutionError, Workflow}
 import org.specs2.mutable.Specification
 
 class WorkflowSpec extends Specification {
@@ -20,6 +23,8 @@ class WorkflowSpec extends Specification {
           override val repository = new InMemoryRepository
         } must throwAn[IllegalStateException]
     }
+
   }
+
 }
 

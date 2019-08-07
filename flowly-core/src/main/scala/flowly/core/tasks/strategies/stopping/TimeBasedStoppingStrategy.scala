@@ -4,7 +4,6 @@ import java.time.temporal.ChronoUnit
 
 import flowly.core.context.ReadableExecutionContext
 import flowly.core.repository.model.Attempts
-import flowly.core.tasks.compose.StoppingStrategy
 
 class TimeBasedStoppingStrategy(maxMinutesToRetry: Int) extends StoppingStrategy {
 

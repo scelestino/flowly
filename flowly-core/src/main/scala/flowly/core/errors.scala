@@ -16,16 +16,17 @@
 
 package flowly.core
 
+import flowly.core.context.ReadableExecutionContext
 import flowly.core.repository.model.Session
 import flowly.core.repository.model.Session.SessionId
 import flowly.core.tasks.basic.Task
 
 // DRAFT
 
-case class ExecutionError(sessionId: SessionId, taskId: String, cause: Throwable) extends Throwable(cause)
+case class ExecutionError(sessionId: SessionId, taskId: String, executionContext: ReadableExecutionContext, cause: Throwable) extends Throwable(cause)
 
 object ExecutionError {
-  def apply(session: Session, task: Task, cause: Throwable): ExecutionError = new ExecutionError(session.sessionId, task.id, cause)
+  def apply(session: Session, task: Task, executionContext: ReadableExecutionContext, cause: Throwable): ExecutionError = new ExecutionError(session.sessionId, task.id, executionContext, cause)
 }
 
 case class TaskNotFound(taskId: String) extends Throwable
