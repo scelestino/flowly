@@ -11,7 +11,7 @@ trait Condition extends Task {
 
   abstract override private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = {
     try {
-      if (condition(executionContext)) super.execute(sessionId, executionContext) else SkipAndContinue(next)
+      if (condition(executionContext)) super.execute(sessionId, executionContext) else SkipAndContinue(next, executionContext)
     } catch {
       case throwable: Throwable => OnError(throwable)
     }

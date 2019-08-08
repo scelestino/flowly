@@ -16,9 +16,9 @@
 
 package flowly.core.tasks
 
-import flowly.core.tasks.basic.{ExecutionTask, FinishTask}
+import flowly.core.tasks.basic.FinishTask
 import flowly.core.tasks.model.{Continue, OnError}
-import flowly.core.{StringKey, TasksContext}
+import flowly.core.{StringKey, TasksContext, tasks}
 import org.specs2.mutable.Specification
 
 
@@ -29,12 +29,12 @@ class ExecutionTaskSpec extends Specification {
   "ExecutionTask" should {
 
     "continue if execution was successful" in new TasksContext {
-      val task = ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec) }
+      val task = tasks.ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec) }
       task.execute("session1", ec) must haveClass[Continue]
     }
 
     "after a continue variables can change" in new TasksContext {
-      val task = ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec.set(StringKey, "value2")) }
+      val task = tasks.ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec.set(StringKey, "value2")) }
       task.execute("session1", ec) match {
         case Continue(_, v) => v.get(StringKey) must beSome("value2")
         case otherwise => failure(s"$otherwise must be Continue")
@@ -42,7 +42,7 @@ class ExecutionTaskSpec extends Specification {
     }
 
     "after a continue next task must be correct" in new TasksContext {
-      val task = ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec) }
+      val task = tasks.ExecutionTask("1", FinishTask("2")) { case (_, ec) => Right(ec) }
       task.execute("session1", ec) match {
         case Continue(nextTask, _) => nextTask must_=== task.next
         case otherwise => failure(s"$otherwise must be Continue")
@@ -50,7 +50,7 @@ class ExecutionTaskSpec extends Specification {
     }
 
     "error if execution was unsuccessful" in new TasksContext {
-      val task = ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
+      val task = tasks.ExecutionTask("1", FinishTask("2")) { case (_, _) => Left(TestException("execution error")) }
       task.execute("session1", ec) match {
         case OnError(TestException(message)) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")

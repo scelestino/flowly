@@ -14,7 +14,7 @@ import flowly.core.context.{ExecutionContext, Key}
   */
 case class FinishTask(override val id: String) extends Task {
 
-  def allowedKeys: List[Key[_]] = Nil
+  protected def customAllowedKeys: List[Key[_]] = Nil
 
   private[flowly] def execute(sessionId: String, variables: ExecutionContext): TaskResult = Finish
 

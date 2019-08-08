@@ -129,14 +129,14 @@ trait Workflow {
 
         })
 
-      case SkipAndContinue(nextTask) =>
+      case SkipAndContinue(nextTask, resultingExecutionContext) =>
 
-        repository.updateSession(session.continue(nextTask, executionContext)).fold(onFailure, { session =>
+        repository.updateSession(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
-            l.onSkip(session.sessionId, executionContext, task.id, nextTask.id)
-            l.onContinue(session.sessionId, executionContext, task.id, nextTask.id)
+            l.onSkip(session.sessionId, resultingExecutionContext, task.id, nextTask.id)
+            l.onContinue(session.sessionId, resultingExecutionContext, task.id, nextTask.id)
           })
 
           // Execute next Task

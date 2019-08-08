@@ -28,8 +28,6 @@ import flowly.core.context.{ExecutionContext, Key, ReadableExecutionContext}
   */
 trait DisjunctionTask extends Task {
 
-  def allowedKeys: List[Key[_]] = Nil
-
   protected def branches: List[(ReadableExecutionContext => Boolean, Task)]
 
   /**
@@ -51,27 +49,3 @@ trait DisjunctionTask extends Task {
 
 }
 
-object DisjunctionTask {
-
-  def apply(_id: String, _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
-    override val id: String = _id
-
-    def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
-  }
-
-  def apply(_id: String, ifTrue: Task, ifFalse: Task, condition: ReadableExecutionContext => Boolean): DisjunctionTask = {
-    apply(_id, (condition, ifTrue), (_ => true, ifFalse))
-  }
-
-}
-
-object BlockingDisjunctionTask {
-  def apply(_id: String, _allowedKeys: List[Key[_]], _branches: (ReadableExecutionContext => Boolean, Task)*): DisjunctionTask = new DisjunctionTask {
-    override val id: String = _id
-
-    def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
-
-    override protected def blockOnNoCondition = true
-
-  }
-}

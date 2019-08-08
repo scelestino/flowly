@@ -42,17 +42,3 @@ trait BlockingTask extends Task {
 
 }
 
-object BlockingTask {
-
-  def apply(_id: String, _next: Task, _condition: ReadableExecutionContext => Boolean, _allowedKeys: List[Key[_]]): BlockingTask = new BlockingTask {
-
-    override val id: String = _id
-
-    val next: Task = _next
-
-    def condition(variables: ReadableExecutionContext): Boolean = _condition(variables)
-
-    override def allowedKeys: List[Key[_]] = _allowedKeys
-  }
-
-}

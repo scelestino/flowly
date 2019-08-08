@@ -28,7 +28,7 @@ trait ExecutionTask extends Task {
 
   val next: Task
 
-  def allowedKeys: List[Key[_]] = Nil
+  protected def customAllowedKeys: List[Key[_]] = Nil
 
   protected def perform(sessionId: String, executionContext: WritableExecutionContext): ErrorOr[WritableExecutionContext]
 
@@ -41,19 +41,3 @@ trait ExecutionTask extends Task {
   private[flowly] def followedBy: List[Task] = next :: Nil
 
 }
-
-object ExecutionTask {
-
-  def apply(_id: String, _next: Task)(_perform: (String, WritableExecutionContext) => ErrorOr[WritableExecutionContext]): ExecutionTask = new ExecutionTask {
-
-    override val id: String = _id
-
-    val next: Task = _next
-
-    def perform(sessionId: String, executionContext: WritableExecutionContext): ErrorOr[WritableExecutionContext] = _perform(sessionId, executionContext)
-
-  }
-
-}
-
-// TODO: an execution task could cancel a workflow?????

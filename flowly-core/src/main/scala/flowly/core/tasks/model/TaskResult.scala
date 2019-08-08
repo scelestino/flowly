@@ -38,7 +38,7 @@ case class Continue(nextTask: Task, executionContext: WritableExecutionContext) 
   *
   * @param nextTask  next task to be executed
   */
-case class SkipAndContinue(nextTask: Task) extends TaskResult
+case class SkipAndContinue(nextTask: Task, executionContext: WritableExecutionContext) extends TaskResult
 
 /**
   * Current workflow execution has finished

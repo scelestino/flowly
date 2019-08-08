@@ -19,8 +19,10 @@ package flowly.core
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import flowly.core.repository.InMemoryRepository
-import flowly.core.tasks.basic.{BlockingDisjunctionTask, DisjunctionTask, FinishTask, Task, BlockingTask, ExecutionTask}
-import flowly.core.context.{ExecutionContextFactory, Key}
+import flowly.core.context.{ExecutionContextFactory, Key, ReadableExecutionContext, WritableExecutionContext}
+import flowly.core.tasks.basic.{ExecutionTask, FinishTask, Task}
+import flowly.core.tasks.compose.{Alternative, Condition, Retry, Skippable}
+import flowly.core.tasks.{BlockingDisjunctionTask, BlockingTask, DisjunctionTask, ExecutionTask}
 
 
 //TODO: Convert into tests with validations
@@ -63,7 +65,7 @@ object MainTest extends App {
 
   trait FirstComponent {
     this: BlockingDisjunctionComponent =>
-    lazy val first: Task = ExecutionTask("EXECUTING 1", blockingDisjunction) { (_, variables) =>
+    lazy val first: Task = tasks.ExecutionTask("EXECUTING 1", blockingDisjunction) { (_, variables) =>
       Right(variables.set(Key1, "foo bar baz"))
     }
   }

@@ -12,7 +12,7 @@ import flowly.core.{ErrorOr, Param, ParamsNotAllowed}
   */
 trait Task {
 
-  val id: String = this.getClass.getSimpleName
+  def id: String = this.getClass.getSimpleName
 
   /**
     * Perform a single step inside the workflow. It depends on the task implementation
@@ -33,7 +33,11 @@ trait Task {
     * A list of keys allowed by this task. It means that a session on this task can be
     * executed with these keys
     */
-  def allowedKeys: List[Key[_]]
+  final def allowedKeys: List[Key[_]] = customAllowedKeys ++ internalAllowedKeys
+
+  private[flowly] def internalAllowedKeys: List[Key[_]] = Nil
+
+  protected def customAllowedKeys: List[Key[_]]
 
   override def toString: String = s"Task:$id"
 

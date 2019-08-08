@@ -16,9 +16,9 @@
 
 package flowly.core.tasks
 
-import flowly.core.tasks.basic.{DisjunctionTask, FinishTask}
+import flowly.core.tasks.basic.FinishTask
 import flowly.core.tasks.model.{Continue, OnError}
-import flowly.core.{DisjunctionTaskError, IntKey, StringKey, TasksContext}
+import flowly.core.{DisjunctionTaskError, IntKey, StringKey, TasksContext, tasks}
 import org.specs2.mutable.Specification
 
 class DisjunctionTaskSpec extends Specification {
@@ -26,13 +26,13 @@ class DisjunctionTaskSpec extends Specification {
   "DisjunctionTask" should {
 
     "continue if execution was successful" in new TasksContext {
-      val task = DisjunctionTask("1", FinishTask("2"), FinishTask("3"), _.contains(StringKey))
+      val task = tasks.DisjunctionTask("1", FinishTask("2"), FinishTask("3"), _.contains(StringKey))
       task.execute("session1", ec) must haveClass[Continue]
     }
 
     "after a continue next task must be correct" in new TasksContext {
       val ifTrue = FinishTask("2")
-      val task = DisjunctionTask("1", ifTrue, FinishTask("3"), _.contains(StringKey))
+      val task = tasks.DisjunctionTask("1", ifTrue, FinishTask("3"), _.contains(StringKey))
       task.execute("session1", ec) match {
         case Continue(nextTask, _) => nextTask must_=== ifTrue
         case otherwise => failure(s"$otherwise must be Continue")
@@ -40,12 +40,12 @@ class DisjunctionTaskSpec extends Specification {
     }
 
     "error if there no valid condition" in new TasksContext {
-      val task = basic.DisjunctionTask("1", (_.contains(IntKey), FinishTask("2")))
+      val task = DisjunctionTask("1", (_.contains(IntKey), FinishTask("2")))
       task.execute("session1", ec) must_== OnError(DisjunctionTaskError("1"))
     }
 
     "error if execution was unsuccessful" in new TasksContext {
-      val task = basic.DisjunctionTask("1", (_ => throw TestException("execution error"), FinishTask("2")))
+      val task = tasks.DisjunctionTask("1", (_ => throw TestException("execution error"), FinishTask("2")))
       task.execute("session1", ec) match {
         case OnError(TestException(message)) => message must_== "execution error"
         case otherwise => failure(s"$otherwise must be OnError")
