@@ -18,15 +18,16 @@ package flowly.core.repository
 
 import flowly.core.{ErrorOr, SessionNotFound}
 import flowly.core.repository.model.Session
-import flowly.core.repository.model.Session.SessionId
+import flowly.core.repository.model.Session.{SessionId, Status}
 
 import scala.collection.mutable
 
 
 trait Repository {
-  def insertSession(session: Session): ErrorOr[Session]
-  def getSession(sessionId: SessionId): ErrorOr[Session]
-  def updateSession(session: Session): ErrorOr[Session]
+  def insert(session: Session): ErrorOr[Session]
+  def getById(sessionId: SessionId): ErrorOr[Session]
+  def getByStatus(status: Status): ErrorOr[List[SessionId]]
+  def update(session: Session): ErrorOr[Session]
 }
 
 // dummy repository
@@ -34,17 +35,21 @@ class InMemoryRepository extends Repository {
 
   private val storage: mutable.Map[String, Session] = mutable.Map[String, Session]()
 
-  override def insertSession(session: Session): ErrorOr[Session] = {
-    updateSession(session)
+  def insert(session: Session): ErrorOr[Session] = {
+    update(session)
   }
 
-  override def getSession(sessionId: SessionId): ErrorOr[Session] = {
+  def update(session: Session): ErrorOr[Session] = {
+    storage.update(session.sessionId, session)
+    Right(session)
+  }
+
+  def getById(sessionId: SessionId): ErrorOr[Session] = {
     storage.get(sessionId).toRight(SessionNotFound(sessionId))
   }
 
-  override def updateSession(session: Session): ErrorOr[Session] = {
-    storage.update(session.sessionId, session)
-    Right(session)
+  def getByStatus(status: Status): ErrorOr[List[SessionId]] = {
+    Right(storage.values.filter(_.status == status).map(_.sessionId).toList)
   }
 
 }

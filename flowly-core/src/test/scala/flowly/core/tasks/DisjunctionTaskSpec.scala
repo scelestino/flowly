@@ -18,7 +18,7 @@ package flowly.core.tasks
 
 import flowly.core.tasks.basic.FinishTask
 import flowly.core.tasks.model.{Continue, OnError}
-import flowly.core.{DisjunctionTaskError, IntKey, StringKey, TasksContext, tasks}
+import flowly.core._
 import org.specs2.mutable.Specification
 
 class DisjunctionTaskSpec extends Specification {

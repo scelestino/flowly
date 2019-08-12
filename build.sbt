@@ -4,7 +4,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "flowly",
   )
-  .aggregate(`flowly-core`, `flowly-mongodb`)
+  .aggregate(`flowly-core`, `flowly-mongodb`, `flowly-demo`)
 
 val jacksonVersion = "2.9.9"
 
@@ -33,5 +33,12 @@ lazy val `flowly-mongodb` = project
     )
   )
   .dependsOn(`flowly-core`)
+
+lazy val `flowly-demo` = project
+    .settings(CommonSettings.settings: _*)
+    .settings(
+      name := "flowly-demo"
+    )
+    .dependsOn(`flowly-core`, `flowly-mongodb`)
 
 scalacOptions in Test ++= Seq("-Yrangepos")

@@ -48,7 +48,7 @@ trait Workflow {
     */
   def init(params: Param*): ErrorOr[SessionId] = {
 
-    repository.insertSession(Session(params.toList.toVariables)).map { session =>
+    repository.insert(Session(params.toList.toVariables)).map { session =>
 
       // On Initialization Event
       eventListeners.foreach(_.onInitialization(session.sessionId, session.variables))
@@ -78,7 +78,7 @@ trait Workflow {
   def execute(sessionId: SessionId, params: List[Param]): ErrorOr[ExecutionResult] = for {
 
     // Get Session, can be executed?
-    session <- repository.getSession(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
+    session <- repository.getById(sessionId).filterOrElse(_.isExecutable, SessionCantBeExecuted(sessionId))
 
     // Get Current Task
     currentTask <- currentTask(session)
@@ -87,7 +87,7 @@ trait Workflow {
     _ <- if(currentTask.accept(params.toKeys)) Right(true) else Left(ParamsNotAllowed(params))
 
     // Set the session as running
-    runningSession <- repository.updateSession(session.resume(currentTask, params))
+    runningSession <- repository.update(session.resume(currentTask, params))
 
     // Create Execution Context
     executionContext = executionContextFactory.create(session)
@@ -119,7 +119,7 @@ trait Workflow {
 
       case Continue(nextTask, resultingExecutionContext) =>
 
-        repository.updateSession(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
+        repository.update(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
 
           // On Continue Event
           eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, nextTask.id))
@@ -131,7 +131,7 @@ trait Workflow {
 
       case SkipAndContinue(nextTask, resultingExecutionContext) =>
 
-        repository.updateSession(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
+        repository.update(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
@@ -146,7 +146,7 @@ trait Workflow {
 
       case Block =>
 
-        repository.updateSession(session.blocked(task)).fold(onFailure, { session =>
+        repository.update(session.blocked(task)).fold(onFailure, { session =>
 
           // On Block Event
           eventListeners.foreach(_.onBlock(session.sessionId, executionContext, task.id))
@@ -157,7 +157,7 @@ trait Workflow {
 
       case Finish =>
 
-        repository.updateSession(session.finished(task)).fold(onFailure, { session =>
+        repository.update(session.finished(task)).fold(onFailure, { session =>
 
           // On Finish Event
           eventListeners.foreach(_.onFinish(session.sessionId, executionContext, task.id))
@@ -168,7 +168,7 @@ trait Workflow {
 
       case ToRetry(cause, attempts) =>
 
-        repository.updateSession(session.toRetry(task, cause, attempts)).fold(onFailure, { session =>
+        repository.update(session.toRetry(task, cause, attempts)).fold(onFailure, { session =>
 
           // On ToRetry Event
           eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.id, cause, attempts))
@@ -179,7 +179,7 @@ trait Workflow {
 
       case OnError(cause) =>
 
-        repository.updateSession(session.onError(task, cause)).fold(onFailure, { session =>
+        repository.update(session.onError(task, cause)).fold(onFailure, { session =>
 
           // On Error Event
           eventListeners.foreach(_.onError(session.sessionId, executionContext, task.id, cause))
@@ -198,11 +198,11 @@ trait Workflow {
     * @param sessionId session id
     * @return Variables (read only)
     */
-  def variables(sessionId: SessionId): ErrorOr[Variables] = repository.getSession(sessionId).map(_.variables)
+  def variables(sessionId: SessionId): ErrorOr[Variables] = repository.getById(sessionId).map(_.variables)
 
   def currentAllowedKeys(sessionId: String): ErrorOr[List[Key[_]]] = for {
 
-    session <- repository.getSession(sessionId)
+    session <- repository.getById(sessionId)
 
     currentTask <- currentTask(session)
 

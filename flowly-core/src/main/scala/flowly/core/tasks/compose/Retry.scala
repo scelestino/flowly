@@ -9,7 +9,7 @@ import flowly.core.tasks.model.{OnError, TaskResult, ToRetry}
 import flowly.core.tasks.strategies.scheduling.SchedulingStrategy
 import flowly.core.tasks.strategies.stopping.StoppingStrategy
 
-trait Retry extends Task {
+trait Retry extends Task with Dependencies {
 
   protected def schedulingStrategy: SchedulingStrategy
 
@@ -28,5 +28,10 @@ trait Retry extends Task {
       case throwable: Throwable => OnError(throwable)
     }
   }
+
+  /**
+    * This method give us a compile-time check about [[Alternative]] use
+    */
+  override private[flowly] def alternativeAfterAll():Unit = ()
 
 }
