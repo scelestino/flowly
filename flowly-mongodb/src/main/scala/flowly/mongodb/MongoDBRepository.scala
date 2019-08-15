@@ -1,11 +1,15 @@
 package flowly.mongodb
 
+import java.lang
+import java.time.Instant
+import java.util.Date
+
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import com.mongodb.MongoClient
 import com.mongodb.client.model.IndexOptions
 import flowly.core.repository.Repository
-import flowly.core.repository.model.Session
+import flowly.core.repository.model.{Session, Status}
 import flowly.core.repository.model.Session.{SessionId, Status}
 import flowly.core.{ErrorOr, SessionNotFound}
 import javax.persistence.{OptimisticLockException, PersistenceException}
@@ -13,6 +17,7 @@ import org.bson.Document
 import org.mongojack.JacksonMongoCollection
 
 import scala.jdk.CollectionConverters._
+import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 class MongoDBRepository(client: MongoClient, databaseName: String, collectionName: String, objectMapper: ObjectMapper with ScalaObjectMapper) extends Repository {
@@ -24,8 +29,10 @@ class MongoDBRepository(client: MongoClient, databaseName: String, collectionNam
     val coll = builder.withObjectMapper(objectMapper).build(mongoCollection, classOf[Session])
 
     // Initialize sessionId index
-    coll.createIndex(new Document("sessionId", 1), new IndexOptions().unique(true))
+    coll.createIndex(Document("sessionId" -> 1.asJava), new IndexOptions().unique(true))
+    coll.createIndex(Document("status" -> 1.asJava, "attempts.nextRetry" -> 1.asJava))
     coll
+
   }
 
   def getById(sessionId: SessionId): ErrorOr[Session] = {
@@ -36,10 +43,10 @@ class MongoDBRepository(client: MongoClient, databaseName: String, collectionNam
     }
   }
 
-  def getByStatus(status: Status): ErrorOr[List[SessionId]] = {
-    Try(collection.find(new Document("status", status))) match {
+  def getToRetry(): ErrorOr[List[SessionId]] = {
+    Try(collection.find(Document("status" -> Status.TO_RETRY, "attempts.nextRetry" -> Document("$lte" -> Date.from(Instant.now)) ))) match {
       case Success(result) => Right(result.map(_.sessionId).asScala.toList)
-      case Failure(throwable) => Left(new PersistenceException(s"Error getting sessions by status $status", throwable))
+      case Failure(throwable) => Left(new PersistenceException("Error getting sessions to retry", throwable))
     }
   }
 
@@ -56,22 +63,24 @@ class MongoDBRepository(client: MongoClient, databaseName: String, collectionNam
       val document = JacksonMongoCollection.convertToDocument(session, objectMapper, classOf[Session])
       document.remove("version")
 
-      val update = new Document("$set", document)
-      update.put("$inc", new Document("version", 1))
+      val update = Document("$set" -> document, "$inc" -> Document("version" -> 1.asJava))
 
       // Condition: there is a session with the same sessionId and version
-      val query = Map[String, AnyRef](
-        "sessionId" -> session.sessionId,
-        "version" -> java.lang.Long.valueOf(session.version)
-      ).asJava
+      val query = Document("sessionId" -> session.sessionId, "version" -> session.version.asJava)
 
-      collection.findAndModify(new Document(query), new Document(), new Document(), collection.serializeFields(update), true, false)
+      collection.findAndModify(query, Document(), Document(), collection.serializeFields(update), true, false)
 
     } match {
       case Success(null) => Left(new OptimisticLockException(s"Session ${session.sessionId} was modified by another transaction"))
       case Success(elem) => Right(elem)
       case Failure(throwable) => Left(throwable)
     }
+  }
+
+  private def Document(values:(String, AnyRef)*):Document = new Document(Map(values:_*).asJava)
+
+  private implicit class NumberOps(value:Long) {
+    def asJava:lang.Long = lang.Long.valueOf(value)
   }
 
 }

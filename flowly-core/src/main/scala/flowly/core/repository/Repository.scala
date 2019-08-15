@@ -16,8 +16,10 @@
 
 package flowly.core.repository
 
+import java.time.Instant
+
 import flowly.core.{ErrorOr, SessionNotFound}
-import flowly.core.repository.model.Session
+import flowly.core.repository.model.{Session, Status}
 import flowly.core.repository.model.Session.{SessionId, Status}
 
 import scala.collection.mutable
@@ -26,7 +28,7 @@ import scala.collection.mutable
 trait Repository {
   def insert(session: Session): ErrorOr[Session]
   def getById(sessionId: SessionId): ErrorOr[Session]
-  def getByStatus(status: Status): ErrorOr[List[SessionId]]
+  def getToRetry(): ErrorOr[List[SessionId]]
   def update(session: Session): ErrorOr[Session]
 }
 
@@ -48,8 +50,8 @@ class InMemoryRepository extends Repository {
     storage.get(sessionId).toRight(SessionNotFound(sessionId))
   }
 
-  def getByStatus(status: Status): ErrorOr[List[SessionId]] = {
-    Right(storage.values.filter(_.status == status).map(_.sessionId).toList)
+  def getToRetry(): ErrorOr[List[SessionId]] = {
+    Right(storage.values.filter( s => s.status == Status.TO_RETRY && s.attempts.flatMap(_.nextRetry).exists(_.isBefore(Instant.now))).map(_.sessionId).toList)
   }
 
 }
