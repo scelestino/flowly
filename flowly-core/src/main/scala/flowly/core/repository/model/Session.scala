@@ -16,7 +16,7 @@
 
 package flowly.core.repository.model
 
-import java.time.{Instant, LocalDateTime}
+import java.time.Instant
 import java.util.UUID
 
 import flowly.core.repository.model.Session.{SessionId, Status}
@@ -25,7 +25,7 @@ import flowly.core.tasks.basic.Task
 import flowly.core.context.WritableExecutionContext
 import flowly.core.{Param, Variables}
 
-case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], attempts:Option[Attempts], createdAt: LocalDateTime, status: Status, version: Long) {
+case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], attempts:Option[Attempts], createdAt: Instant, status: Status, version: Long) {
 
   def resume(task: Task, params: List[Param]): Session = {
     copy(lastExecution = Option(Execution(task.id)), variables = variables ++ params.toVariables, status = RUNNING, attempts = attempts.map(_.newAttempt()) )
@@ -63,7 +63,7 @@ object Session {
   type Status    = String
 
   def apply(id: SessionId, variables: Variables): Session = {
-    new Session(id, variables, None, None, LocalDateTime.now, CREATED, 0L)
+    new Session(id, variables, None, None, Instant.now, CREATED, 0L)
   }
   def apply(variables: Variables): Session = apply(UUID.randomUUID.toString, variables)
 

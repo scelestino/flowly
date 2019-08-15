@@ -29,6 +29,8 @@ object DisjunctionTask {
 
     override protected def customAllowedKeys = Nil
 
+    override protected def blockOnNoCondition = true
+
     def branches: List[(ReadableExecutionContext => Boolean, Task)] = _branches.toList
   }
 

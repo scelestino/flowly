@@ -33,7 +33,7 @@ trait DisjunctionTask extends Task {
   /**
     * This task is going to block instead of fail when there are no conditions that match
     */
-  protected def blockOnNoCondition = false
+  protected def blockOnNoCondition:Boolean
 
   private[flowly] def execute(sessionId: String, executionContext: ExecutionContext): TaskResult = try {
     branches.collectFirst { case (condition, task) if condition(executionContext) => task } match {

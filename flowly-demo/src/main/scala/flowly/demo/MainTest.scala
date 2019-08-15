@@ -16,19 +16,43 @@ package flowly.demo
  * limitations under the License.
  */
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import java.time.Instant
+
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
-import flowly.core.context.{ExecutionContextFactory, Key}
-import flowly.core.repository.InMemoryRepository
-import flowly.core.tasks.basic.{FinishTask, Task}
+import com.mongodb.MongoClient
+import flowly.core.context.{ExecutionContextFactory, Key, ReadableExecutionContext, WritableExecutionContext}
+import flowly.core.events.EventListener
+import flowly.core.repository.Repository
+import flowly.core.tasks.basic._
 import flowly.core.{DummyEventListener, Workflow}
+import flowly.mongodb.{CustomDateModule, MongoDBRepository}
 
 
-//TODO: Convert into tests with validations
 object MainTest extends App {
 
+  trait RepositoryComponent {
+    this: ObjectMapperComponent =>
+    val client = new MongoClient("localhost")
+    lazy val repository = new MongoDBRepository(client, "flowly", "demo", objectMapperRepository)
+  }
+
   trait ObjectMapperComponent {
-    lazy val objectMapper = new ObjectMapper with ScalaObjectMapper
+    lazy val objectMapperRepository = new ObjectMapper with ScalaObjectMapper
+    objectMapperRepository.registerModule(new DefaultScalaModule)
+    objectMapperRepository.registerModule(CustomDateModule)
+    objectMapperRepository.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    objectMapperRepository.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+  }
+
+  trait ObjectMapperComponent2 {
+    lazy val objectMapperContext = new ObjectMapper with ScalaObjectMapper
+    objectMapperContext.registerModule(new DefaultScalaModule)
+    objectMapperContext.registerModule(new JavaTimeModule)
+    objectMapperContext.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    objectMapperContext.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
   }
 
   trait Finish1Component {
@@ -41,63 +65,96 @@ object MainTest extends App {
 
   trait BlockingComponent {
     this: Finish1Component =>
-    lazy val blocking = BlockingTask("BLOCKING", finish, _.contains(Key3), List(Key3))
+    lazy val blocking: Task = new BlockingTask {
+      override val next: Task = finish
+      override protected def condition(executionContext: ReadableExecutionContext) = executionContext.contains(Key3)
+      override protected def customAllowedKeys = List(Key3)
+    }
   }
 
   trait SecondComponent {
+    this: ThirdComponent =>
+    lazy val second: Task = new ExecutionTask {
+      override def id: String = "SECOND"
+      val next: Task = third
+      protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
+        println(executionContext.get(Key1))
+        Right(executionContext.set(Key2, 1234).set(Key7, Instant.now))
+      }
+    }
+  }
+
+  trait ThirdComponent {
     this: BlockingComponent =>
-    lazy val second: Task = ExecutionTask("EXECUTING 2", blocking) { (sessionId, variables) =>
-      println(variables.get(Key1))
-      Right(variables.set(Key2, 1234))
+    lazy val third: Task = new ExecutionTask {
+      override def id: String = "THIRD"
+      val next: Task = blocking
+      override protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
+        val maybeInstant = executionContext.get(Key7)
+        println(s" la fecha es $maybeInstant")
+        Right(executionContext)
+      }
     }
   }
 
   trait BlockingDisjunctionComponent {
     this: Finish2Component with DisjunctionComponent =>
-    lazy val blockingDisjunction: Task = BlockingDisjunctionTask("BlockingDisjunction", List(Key5, Key6), (_.contains(Key5), disjunction), (_.contains(Key6), finish2))
+    lazy val blockingDisjunction: Task = new DisjunctionTask {
+      protected def branches = List( (_.contains(Key5), disjunction), (_.contains(Key6), finish2) )
+      protected def customAllowedKeys = List(Key5, Key6)
+      protected def blockOnNoCondition = true
+    }
   }
 
   trait DisjunctionComponent {
     this: Finish2Component with SecondComponent =>
-    lazy val disjunction: Task = DisjunctionTask("Disjunction", finish2, second, _.contains(Key4))
+    lazy val disjunction: Task = new DisjunctionTask {
+      protected def branches = List( (_.contains(Key4), finish2), (_ => true, second) )
+      protected def customAllowedKeys = Nil
+      protected def blockOnNoCondition = true
+    }
   }
 
   trait FirstComponent {
     this: BlockingDisjunctionComponent =>
-    lazy val first: Task = ExecutionTask("EXECUTING 1", blockingDisjunction) { (_, variables) =>
-      Right(variables.set(Key1, "foo bar baz"))
+    lazy val first: Task = new ExecutionTask {
+      val next: Task = blockingDisjunction
+      protected def perform(sessionId: String, executionContext: WritableExecutionContext) = Right(executionContext.set(Key1, "foo bar baz"))
     }
   }
 
-  object Components extends FirstComponent with SecondComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperComponent
-
-  val workflow = new Workflow {
-    def initialTask: Task = Components.first
-    override def eventListeners = List(new DummyEventListener)
-    override val executionContextFactory = new ExecutionContextFactory(new JacksonSerializer(Components.objectMapper))
-    override val repository = new InMemoryRepository
+  trait WorkflowComponent {
+    self: ObjectMapperComponent2 with RepositoryComponent =>
+    lazy val workflow:Workflow = new Workflow {
+      def initialTask: Task = Components.first
+      override def eventListeners:List[EventListener] = List(new DummyEventListener)
+      override val executionContextFactory = new ExecutionContextFactory(new JacksonSerializer(self.objectMapperContext))
+      override val repository:Repository = self.repository
+    }
   }
+
+  object Components extends WorkflowComponent with FirstComponent with SecondComponent with ThirdComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperComponent with ObjectMapperComponent2 with RepositoryComponent
 
   // create and execute a workflow
   val result = for {
 
-    sessionId <- workflow.init()
+    sessionId <- Components.workflow.init()
 
-    result <- workflow.execute(sessionId)
+    result <- Components.workflow.execute(sessionId)
 
     _ = println(s"the result is $result\n")
 
-    result2 <- workflow.execute(sessionId)
+    result2 <- Components.workflow.execute(sessionId, Key5 -> 5)
 
     _ = println(s"the result is $result2\n")
 
-    result4 <- workflow.execute(sessionId, Key3 -> true)
+    result3 <- Components.workflow.execute(sessionId, Key3 -> true)
 
-  } yield result4
+  } yield result3
 
   result match {
-    case Right(r) => val v: Boolean = r.executionContext.get(Key3).get
-    case Left(ex) => println(ex)
+    case Right(r) => println(r.executionContext.get(Key2))
+    case Left(ex) => ex.printStackTrace()
   }
 
 }
@@ -108,3 +165,4 @@ case object Key3 extends Key[Boolean]
 case object Key4 extends Key[Boolean]
 case object Key5 extends Key[Int]
 case object Key6 extends Key[Int]
+case object Key7 extends Key[Instant]

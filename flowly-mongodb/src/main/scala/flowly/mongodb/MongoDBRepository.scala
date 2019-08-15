@@ -1,7 +1,6 @@
 package flowly.mongodb
 
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import com.mongodb.MongoClient
 import com.mongodb.client.model.IndexOptions
@@ -12,31 +11,17 @@ import flowly.core.{ErrorOr, SessionNotFound}
 import javax.persistence.{OptimisticLockException, PersistenceException}
 import org.bson.Document
 import org.mongojack.JacksonMongoCollection
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-class MongoDBRepository(
-                         client: MongoClient,
-                         databaseName: String,
-                         collectionName: String,
-                         objectMapper: ObjectMapper with ScalaObjectMapper
-                       ) extends Repository {
-
-  private val om = {
-    // Configure Object Mapper in order to work with Session
-    objectMapper.registerModule(new DefaultScalaModule)
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    objectMapper.configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
-    objectMapper.configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
-    objectMapper
-  }
+class MongoDBRepository(client: MongoClient, databaseName: String, collectionName: String, objectMapper: ObjectMapper with ScalaObjectMapper) extends Repository {
 
   private val collection: JacksonMongoCollection[Session] = {
     val mongoCollection = client.getDatabase(databaseName).getCollection(collectionName)
 
     val builder: JacksonMongoCollection.JacksonMongoCollectionBuilder[Session] = JacksonMongoCollection.builder()
-    val coll = builder.withObjectMapper(om).build(mongoCollection, classOf[Session])
+    val coll = builder.withObjectMapper(objectMapper).build(mongoCollection, classOf[Session])
 
     // Initialize sessionId index
     coll.createIndex(new Document("sessionId", 1), new IndexOptions().unique(true))
@@ -68,7 +53,7 @@ class MongoDBRepository(
   def update(session: Session): ErrorOr[Session] = {
     Try {
       // Update will replace every document field and it is going to increment in one unit its version
-      val document = JacksonMongoCollection.convertToDocument(session, om, classOf[Session])
+      val document = JacksonMongoCollection.convertToDocument(session, objectMapper, classOf[Session])
       document.remove("version")
 
       val update = new Document("$set", document)
