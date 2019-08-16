@@ -26,10 +26,10 @@ import scala.collection.mutable
 
 
 trait Repository {
-  def insert(session: Session): ErrorOr[Session]
   def getById(sessionId: SessionId): ErrorOr[Session]
-  def getToRetry(): ErrorOr[List[SessionId]]
-  def update(session: Session): ErrorOr[Session]
+  def getToRetry: ErrorOr[Iterator[SessionId]]
+  private[flowly] def insert(session: Session): ErrorOr[Session]
+  private[flowly] def update(session: Session): ErrorOr[Session]
 }
 
 // dummy repository
@@ -37,21 +37,21 @@ class InMemoryRepository extends Repository {
 
   private val storage: mutable.Map[String, Session] = mutable.Map[String, Session]()
 
-  def insert(session: Session): ErrorOr[Session] = {
-    update(session)
-  }
-
-  def update(session: Session): ErrorOr[Session] = {
-    storage.update(session.sessionId, session)
-    Right(session)
-  }
-
   def getById(sessionId: SessionId): ErrorOr[Session] = {
     storage.get(sessionId).toRight(SessionNotFound(sessionId))
   }
 
-  def getToRetry(): ErrorOr[List[SessionId]] = {
-    Right(storage.values.filter( s => s.status == Status.TO_RETRY && s.attempts.flatMap(_.nextRetry).exists(_.isBefore(Instant.now))).map(_.sessionId).toList)
+  def getToRetry: ErrorOr[Iterator[SessionId]] = {
+    Right(storage.values.filter( s => s.status == Status.TO_RETRY && s.attempts.flatMap(_.nextRetry).exists(_.isBefore(Instant.now))).map(_.sessionId).iterator)
+  }
+
+  private[flowly] def insert(session: Session): ErrorOr[Session] = {
+    update(session)
+  }
+
+  private[flowly] def update(session: Session): ErrorOr[Session] = {
+    storage.update(session.sessionId, session)
+    Right(session)
   }
 
 }

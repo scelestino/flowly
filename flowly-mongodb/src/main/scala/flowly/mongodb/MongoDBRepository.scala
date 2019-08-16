@@ -7,6 +7,7 @@ import java.util.Date
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import com.mongodb.MongoClient
+import com.mongodb.client.MongoCursor
 import com.mongodb.client.model.IndexOptions
 import flowly.core.repository.Repository
 import flowly.core.repository.model.{Session, Status}
@@ -22,7 +23,7 @@ import scala.util.{Failure, Success, Try}
 
 class MongoDBRepository(client: MongoClient, databaseName: String, collectionName: String, objectMapper: ObjectMapper with ScalaObjectMapper) extends Repository {
 
-  private val collection: JacksonMongoCollection[Session] = {
+  protected val collection: JacksonMongoCollection[Session] = {
     val mongoCollection = client.getDatabase(databaseName).getCollection(collectionName)
 
     val builder: JacksonMongoCollection.JacksonMongoCollectionBuilder[Session] = JacksonMongoCollection.builder()
@@ -43,21 +44,21 @@ class MongoDBRepository(client: MongoClient, databaseName: String, collectionNam
     }
   }
 
-  def getToRetry(): ErrorOr[List[SessionId]] = {
+  def getToRetry: ErrorOr[Iterator[SessionId]] = {
     Try(collection.find(Document("status" -> Status.TO_RETRY, "attempts.nextRetry" -> Document("$lte" -> Date.from(Instant.now)) ))) match {
-      case Success(result) => Right(result.map(_.sessionId).asScala.toList)
+      case Success(result) => Right(result.sort(Document("attempts.nextRetry" -> 1.asJava)).map(_.sessionId).iterator())
       case Failure(throwable) => Left(new PersistenceException("Error getting sessions to retry", throwable))
     }
   }
 
-  def insert(session: Session): ErrorOr[Session] = {
+  private[flowly] def insert(session: Session): ErrorOr[Session] = {
     Try(collection.insert(session)) match {
       case Success(_) => Right(session)
       case Failure(throwable) => Left(new PersistenceException(s"Error inserting session ${session.sessionId}", throwable))
     }
   }
 
-  def update(session: Session): ErrorOr[Session] = {
+  private[flowly] def update(session: Session): ErrorOr[Session] = {
     Try {
       // Update will replace every document field and it is going to increment in one unit its version
       val document = JacksonMongoCollection.convertToDocument(session, objectMapper, classOf[Session])
@@ -77,10 +78,15 @@ class MongoDBRepository(client: MongoClient, databaseName: String, collectionNam
     }
   }
 
-  private def Document(values:(String, AnyRef)*):Document = new Document(Map(values:_*).asJava)
+  protected def Document(values:(String, AnyRef)*):Document = new Document(Map(values:_*).asJava)
 
-  private implicit class NumberOps(value:Long) {
+  protected  implicit class NumberOps(value:Long) {
     def asJava:lang.Long = lang.Long.valueOf(value)
+  }
+
+  protected implicit def cursor2iterator[T](cursor:MongoCursor[T]):Iterator[T] = new Iterator[T] {
+    override def hasNext: Boolean = cursor.hasNext
+    override def next(): T = cursor.next()
   }
 
 }

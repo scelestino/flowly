@@ -38,13 +38,13 @@ import flowly.mongodb.{CustomDateModule, MongoDBRepository}
 object MainTest extends App {
 
   trait RepositoryComponent {
-    this: ObjectMapperComponent =>
+    this: ObjectMapperRepositoryComponent =>
     val client = new MongoClient("localhost")
     lazy val repository = new MongoDBRepository(client, "flowly", "demo", objectMapperRepository)
 //    lazy val repository = new InMemoryRepository
   }
 
-  trait ObjectMapperComponent {
+  trait ObjectMapperRepositoryComponent {
     lazy val objectMapperRepository = new ObjectMapper with ScalaObjectMapper
     objectMapperRepository.registerModule(new DefaultScalaModule)
     objectMapperRepository.registerModule(CustomDateModule)
@@ -52,7 +52,7 @@ object MainTest extends App {
     objectMapperRepository.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
   }
 
-  trait ObjectMapperComponent2 {
+  trait ObjectMapperContextComponent {
     lazy val objectMapperContext = new ObjectMapper with ScalaObjectMapper
     objectMapperContext.registerModule(new DefaultScalaModule)
     objectMapperContext.registerModule(new JavaTimeModule)
@@ -132,7 +132,7 @@ object MainTest extends App {
   }
 
   trait WorkflowComponent {
-    self: ObjectMapperComponent2 with RepositoryComponent =>
+    self: ObjectMapperContextComponent with RepositoryComponent =>
     lazy val workflow:Workflow = new Workflow {
       def initialTask: Task = Components.first
       override def eventListeners:List[EventListener] = List(new DummyEventListener)
@@ -141,7 +141,7 @@ object MainTest extends App {
     }
   }
 
-  object Components extends WorkflowComponent with FirstComponent with SecondComponent with ThirdComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperComponent with ObjectMapperComponent2 with RepositoryComponent
+  object Components extends WorkflowComponent with FirstComponent with SecondComponent with ThirdComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperRepositoryComponent with ObjectMapperContextComponent with RepositoryComponent
 
   val sessionId = Components.workflow.init().right.get
 
@@ -160,7 +160,7 @@ object MainTest extends App {
   val s = Components.repository.getById(sessionId)
   println(s)
 
-  val toRetry = Components.repository.getToRetry()
+  val toRetry = Components.repository.getToRetry
   println(toRetry)
 
 }
