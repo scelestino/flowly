@@ -208,7 +208,7 @@ trait Workflow {
 
   } yield currentTask.allowedKeys
 
-  def getToRetry:ErrorOr[Iterator[SessionId]] = repository.getToRetry()
+  def getToRetry:ErrorOr[Iterator[SessionId]] = repository.getToRetry
 
   /**
     * It returns a list of every [[Task]] in this workflow

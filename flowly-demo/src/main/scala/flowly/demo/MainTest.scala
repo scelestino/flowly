@@ -28,7 +28,7 @@ import flowly.core.events.EventListener
 import flowly.core.repository.model.Attempts
 import flowly.core.repository.{InMemoryRepository, Repository}
 import flowly.core.tasks.basic._
-import flowly.core.tasks.compose.Retry
+import flowly.core.tasks.compose.{Alternative, Retry}
 import flowly.core.tasks.strategies.scheduling.SchedulingStrategy
 import flowly.core.tasks.strategies.stopping.StoppingStrategy
 import flowly.core.{DummyEventListener, Workflow}
@@ -83,8 +83,6 @@ object MainTest extends App {
       override def id: String = "SECOND"
       val next: Task = third
       protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
-//        println(executionContext.get(Key1))
-//        Right(executionContext.set(Key2, 1234).set(Key7, Instant.now))
         Left(new RuntimeException("todo mal"))
       }
       protected def schedulingStrategy = Now

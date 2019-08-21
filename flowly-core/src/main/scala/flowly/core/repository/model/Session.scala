@@ -44,7 +44,7 @@ case class Session(sessionId: SessionId, variables: Variables, lastExecution: Op
   }
 
   def onError(task: Task, throwable: Throwable): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = ERROR, attempts = attempts.map(_.stopRetrying()))
+    copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = ERROR, attempts = attempts.map(_.stopRetrying()))
   }
 
   def toRetry(task: Task, throwable: Throwable, attempts: Attempts): Session = {
