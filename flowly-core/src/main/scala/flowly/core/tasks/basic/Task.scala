@@ -12,7 +12,9 @@ import flowly.core.{ErrorOr, Param, ParamsNotAllowed}
   */
 trait Task {
 
-  def id: String = this.getClass.getSimpleName
+//  def id: String = this.getClass.getSimpleName
+
+  def name:String = this.getClass.getSimpleName
 
   /**
     * Perform a single step inside the workflow. It depends on the task implementation
@@ -39,6 +41,6 @@ trait Task {
 
   protected def customAllowedKeys: List[Key[_]]
 
-  override def toString: String = s"Task:$id"
+  override def toString: String = s"Task:$name"
 
 }

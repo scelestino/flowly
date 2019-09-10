@@ -18,7 +18,7 @@ package flowly.core.tasks.basic
 
 import flowly.core.DisjunctionTaskError
 import flowly.core.tasks.model.{Block, Continue, OnError, TaskResult}
-import flowly.core.context.{ExecutionContext, Key, ReadableExecutionContext}
+import flowly.core.context.{ExecutionContext, ReadableExecutionContext}
 
 /**
   * An instance of this [[Task]] will choose a branch of execution between different paths based on given conditions.
@@ -39,7 +39,7 @@ trait DisjunctionTask extends Task {
     branches.collectFirst { case (condition, task) if condition(executionContext) => task } match {
       case Some(next) => Continue(next, executionContext)
       case None if blockOnNoCondition => Block
-      case None => OnError(DisjunctionTaskError(id))
+      case None => OnError(DisjunctionTaskError(name))
     }
   } catch {
     case throwable: Throwable => OnError(throwable)

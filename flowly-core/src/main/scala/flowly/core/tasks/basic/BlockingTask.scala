@@ -17,7 +17,7 @@
 package flowly.core.tasks.basic
 
 import flowly.core.tasks.model.{Block, Continue, OnError, TaskResult}
-import flowly.core.context.{ExecutionContext, Key, ReadableExecutionContext}
+import flowly.core.context.{ExecutionContext, ReadableExecutionContext}
 
 
 /**

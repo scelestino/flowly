@@ -25,14 +25,14 @@ import flowly.core.context.ReadableExecutionContext
   * Result of a Workflow execution
   *
   * @param sessionId session id
-  * @param taskId    last task executed
+  * @param taskName    last task executed
   * @param executionContext current execution context
   * @param status    session status
   */
-case class ExecutionResult private[flowly](sessionId: SessionId, taskId: String, executionContext: ReadableExecutionContext, status: Status)
+case class ExecutionResult private[flowly](sessionId: SessionId, taskName: String, executionContext: ReadableExecutionContext, status: Status)
 
 object ExecutionResult {
 
-  def apply(session: Session, executionContext: ReadableExecutionContext, task: Task): ExecutionResult = ExecutionResult(session.sessionId, task.id, executionContext, session.status)
+  def apply(session: Session, executionContext: ReadableExecutionContext, task: Task): ExecutionResult = ExecutionResult(session.sessionId, task.name, executionContext, session.status)
 
 }

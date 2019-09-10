@@ -28,27 +28,27 @@ import flowly.core.{Param, Variables}
 case class Session(sessionId: SessionId, variables: Variables, lastExecution: Option[Execution], attempts:Option[Attempts], createdAt: Instant, status: Status, version: Long) {
 
   def resume(task: Task, params: List[Param]): Session = {
-    copy(lastExecution = Option(Execution(task.id)), variables = variables ++ params.toVariables, status = RUNNING, attempts = attempts.map(_.newAttempt()) )
+    copy(lastExecution = Option(Execution(task.name)), variables = variables ++ params.toVariables, status = RUNNING, attempts = attempts.map(_.newAttempt()) )
   }
 
   def continue(task: Task, executionContext: WritableExecutionContext): Session = {
-    copy(lastExecution = Option(Execution(task.id)), variables = executionContext.variables, status = RUNNING, attempts = None)
+    copy(lastExecution = Option(Execution(task.name)), variables = executionContext.variables, status = RUNNING, attempts = None)
   }
 
   def blocked(task: Task): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = BLOCKED, attempts = None)
+    copy(lastExecution = Option(Execution(task.name)), status = BLOCKED, attempts = None)
   }
 
   def finished(task: Task): Session = {
-    copy(lastExecution = Option(Execution(task.id)), status = FINISHED, attempts = None)
+    copy(lastExecution = Option(Execution(task.name)), status = FINISHED, attempts = None)
   }
 
   def onError(task: Task, throwable: Throwable): Session = {
-    copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = ERROR, attempts = attempts.map(_.stopRetrying()))
+    copy(lastExecution = Option(Execution(task.name, throwable.getMessage)), status = ERROR, attempts = attempts.map(_.stopRetrying()))
   }
 
   def toRetry(task: Task, throwable: Throwable, attempts: Attempts): Session = {
-    copy(lastExecution = Option(Execution(task.id, throwable.getMessage)), status = TO_RETRY, attempts = Option(attempts))
+    copy(lastExecution = Option(Execution(task.name, throwable.getMessage)), status = TO_RETRY, attempts = Option(attempts))
   }
 
   def isExecutable: Boolean = status match {
@@ -69,10 +69,10 @@ object Session {
 
 }
 
-case class Execution(taskId: String, message:Option[String], at: Instant)
+case class Execution(taskName: String, message:Option[String], at: Instant)
 object Execution {
-  def apply(taskId: String): Execution = new Execution(taskId, None, Instant.now)
-  def apply(taskId: String, message:String): Execution = new Execution(taskId, Option(message), Instant.now)
+  def apply(taskName: String): Execution = new Execution(taskName, None, Instant.now)
+  def apply(taskName: String, message:String): Execution = new Execution(taskName, Option(message), Instant.now)
 }
 
 case class Attempts(quantity: Int, firstAttempt: Instant, nextRetry: Option[Instant]) {

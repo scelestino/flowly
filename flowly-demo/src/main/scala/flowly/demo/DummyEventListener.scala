@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package flowly.core
+package flowly.demo
 
+import flowly.core.Variables
+import flowly.core.context.ReadableExecutionContext
 import flowly.core.events.EventListener
 import flowly.core.repository.model.Attempts
 import flowly.core.repository.model.Session.SessionId
-import flowly.core.context.ReadableExecutionContext
 
 class DummyEventListener extends EventListener {
 

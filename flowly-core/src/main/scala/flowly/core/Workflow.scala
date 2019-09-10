@@ -103,8 +103,8 @@ trait Workflow {
   } yield result
 
   private def currentTask(session: Session): ErrorOr[Task] = {
-    val taskId = session.lastExecution.map(_.taskId).getOrElse(initialTask.id)
-    tasks.find(_.id == taskId).toRight(TaskNotFound(taskId))
+    val taskName = session.lastExecution.map(_.taskName).getOrElse(initialTask.name)
+    tasks.find(_.name == taskName).toRight(TaskNotFound(taskName))
   }
 
   private def execute(task: Task, session: Session): ErrorOr[ExecutionResult] = {
@@ -122,7 +122,7 @@ trait Workflow {
         repository.update(session.continue(nextTask, resultingExecutionContext)).fold(onFailure, { session =>
 
           // On Continue Event
-          eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.id, nextTask.id))
+          eventListeners.foreach(_.onContinue(session.sessionId, resultingExecutionContext, task.name, nextTask.name))
 
           // Execute next Task
           execute(nextTask, session)
@@ -135,8 +135,8 @@ trait Workflow {
 
           // On skip and Continue Events
           eventListeners.foreach(l => {
-            l.onSkip(session.sessionId, resultingExecutionContext, task.id, nextTask.id)
-            l.onContinue(session.sessionId, resultingExecutionContext, task.id, nextTask.id)
+            l.onSkip(session.sessionId, resultingExecutionContext, task.name, nextTask.name)
+            l.onContinue(session.sessionId, resultingExecutionContext, task.name, nextTask.name)
           })
 
           // Execute next Task
@@ -149,7 +149,7 @@ trait Workflow {
         repository.update(session.blocked(task)).fold(onFailure, { session =>
 
           // On Block Event
-          eventListeners.foreach(_.onBlock(session.sessionId, executionContext, task.id))
+          eventListeners.foreach(_.onBlock(session.sessionId, executionContext, task.name))
 
           Right(ExecutionResult(session, executionContext, task))
 
@@ -160,7 +160,7 @@ trait Workflow {
         repository.update(session.finished(task)).fold(onFailure, { session =>
 
           // On Finish Event
-          eventListeners.foreach(_.onFinish(session.sessionId, executionContext, task.id))
+          eventListeners.foreach(_.onFinish(session.sessionId, executionContext, task.name))
 
           Right(ExecutionResult(session, executionContext, task))
 
@@ -171,7 +171,7 @@ trait Workflow {
         repository.update(session.toRetry(task, cause, attempts)).fold(onFailure, { session =>
 
           // On ToRetry Event
-          eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.id, cause, attempts))
+          eventListeners.foreach(_.onToRetry(session.sessionId, executionContext, task.name, cause, attempts))
 
           Left(ExecutionError(session, task, executionContext, cause))
 
@@ -182,7 +182,7 @@ trait Workflow {
         repository.update(session.onError(task, cause)).fold(onFailure, { session =>
 
           // On Error Event
-          eventListeners.foreach(_.onError(session.sessionId, executionContext, task.id, cause))
+          eventListeners.foreach(_.onError(session.sessionId, executionContext, task.name, cause))
 
           Left(ExecutionError(session, task, executionContext, cause))
 
@@ -228,7 +228,7 @@ trait Workflow {
     * Check if there are duplicated tasks
     */
   private def checkConsistency(): Unit = {
-    val duplicated = tasks.map(_.id).diff(tasks.map(_.id).distinct)
+    val duplicated = tasks.map(_.name).diff(tasks.map(_.name).distinct)
     if (duplicated.nonEmpty) throw new IllegalStateException(s"There are repeated Tasks: $duplicated. Workflow can't be constructed")
   }
 

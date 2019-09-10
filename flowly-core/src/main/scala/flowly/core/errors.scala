@@ -23,13 +23,13 @@ import flowly.core.tasks.basic.Task
 
 // DRAFT
 
-case class ExecutionError(sessionId: SessionId, taskId: String, executionContext: ReadableExecutionContext, cause: Throwable) extends Throwable(cause)
+case class ExecutionError(sessionId: SessionId, taskName: String, executionContext: ReadableExecutionContext, cause: Throwable) extends Throwable(cause)
 
 object ExecutionError {
-  def apply(session: Session, task: Task, executionContext: ReadableExecutionContext, cause: Throwable): ExecutionError = new ExecutionError(session.sessionId, task.id, executionContext, cause)
+  def apply(session: Session, task: Task, executionContext: ReadableExecutionContext, cause: Throwable): ExecutionError = new ExecutionError(session.sessionId, task.name, executionContext, cause)
 }
 
-case class TaskNotFound(taskId: String) extends Throwable
+case class TaskNotFound(taskName: String) extends Throwable
 
 case class SessionNotFound(sessionId: SessionId) extends Throwable
 
@@ -41,6 +41,6 @@ case class ParamsNotAllowed(params: List[Param]) extends Throwable
 
 case class RepositoryError()
 
-case class DisjunctionTaskError(taskId:String) extends Throwable
+case class DisjunctionTaskError(taskName:String) extends Throwable
 
 case class SerializationException(message: String, cause: Throwable) extends Throwable(message, cause)

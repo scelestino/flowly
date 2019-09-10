@@ -16,6 +16,7 @@ package flowly.demo
  * limitations under the License.
  */
 
+import java.io.IOError
 import java.time.Instant
 
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, SerializationFeature}
@@ -31,7 +32,7 @@ import flowly.core.tasks.basic._
 import flowly.core.tasks.compose.{Alternative, Retry, Retryable}
 import flowly.core.tasks.strategies.scheduling.SchedulingStrategy
 import flowly.core.tasks.strategies.stopping.StoppingStrategy
-import flowly.core.{DummyEventListener, Workflow}
+import flowly.core.Workflow
 import flowly.mongodb.{CustomDateModule, MongoDBRepository}
 
 import scala.util.Try
@@ -43,7 +44,7 @@ object MainTest extends App {
     this: ObjectMapperRepositoryComponent =>
     val client = new MongoClient("localhost")
     lazy val repository = new MongoDBRepository(client, "flowly", "demo", objectMapperRepository)
-//    lazy val repository = new InMemoryRepository
+    //    lazy val repository = new InMemoryRepository
   }
 
   trait ObjectMapperRepositoryComponent {
@@ -74,7 +75,9 @@ object MainTest extends App {
     this: Finish1Component =>
     lazy val blocking: Task = new BlockingTask {
       override val next: Task = finish
+
       override protected def condition(executionContext: ReadableExecutionContext) = executionContext.contains(Key3)
+
       override protected def customAllowedKeys = List(Key3)
     }
   }
@@ -82,12 +85,15 @@ object MainTest extends App {
   trait SecondComponent {
     this: ThirdComponent =>
     lazy val second: Task = new ExecutionTask with Retry {
-      override def id: String = "SECOND"
+
       val next: Task = third
+
       protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
         Left(new RuntimeException("todo mal"))
       }
+
       protected def schedulingStrategy = Now
+
       protected def stoppingStrategy = Always
     }
   }
@@ -95,8 +101,9 @@ object MainTest extends App {
   trait ThirdComponent {
     this: BlockingComponent =>
     lazy val third: Task = new ExecutionTask {
-      override def id: String = "THIRD"
+
       val next: Task = blocking
+
       override protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
         val maybeInstant = executionContext.get(Key7)
         println(s" la fecha es $maybeInstant")
@@ -108,8 +115,10 @@ object MainTest extends App {
   trait BlockingDisjunctionComponent {
     this: Finish2Component with DisjunctionComponent =>
     lazy val blockingDisjunction: Task = new DisjunctionTask {
-      protected def branches = List( (_.contains(Key5), disjunction), (_.contains(Key6), finish2) )
+      protected def branches = List((_.contains(Key5), disjunction), (_.contains(Key6), finish2))
+
       protected def customAllowedKeys = List(Key5, Key6)
+
       protected def blockOnNoCondition = true
     }
   }
@@ -117,8 +126,10 @@ object MainTest extends App {
   trait DisjunctionComponent {
     this: Finish2Component with SecondComponent =>
     lazy val disjunction: Task = new DisjunctionTask {
-      protected def branches = List( (_.contains(Key4), finish2), (_ => true, second) )
+      protected def branches = List((_.contains(Key4), finish2), (_ => true, second))
+
       protected def customAllowedKeys = Nil
+
       protected def blockOnNoCondition = true
     }
   }
@@ -127,38 +138,43 @@ object MainTest extends App {
     this: BlockingDisjunctionComponent =>
     lazy val first: Task = new ExecutionTask with Retry {
       val next: Task = blockingDisjunction
+
       protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
-//        Right(executionContext.set(Key1, "foo bar baz"))
-         Left(CustomError("todo mal"))
+        //        Right(executionContext.set(Key1, "foo bar baz"))
+        Left(CustomError("todo mal"))
       }
+
       override protected def schedulingStrategy = Now
+
       override protected def stoppingStrategy = Always
     }
   }
 
   trait WorkflowComponent {
     self: ObjectMapperContextComponent with RepositoryComponent =>
-    lazy val workflow:Workflow = new Workflow {
+    lazy val workflow: Workflow = new Workflow {
       def initialTask: Task = Components.first
-      override def eventListeners:List[EventListener] = List(new DummyEventListener)
+
+      override def eventListeners: List[EventListener] = List(new DummyEventListener)
+
       override val executionContextFactory = new ExecutionContextFactory(new JacksonSerializer(self.objectMapperContext))
-      override val repository:Repository = self.repository
+      override val repository: Repository = self.repository
     }
   }
 
   object Components extends WorkflowComponent with FirstComponent with SecondComponent with ThirdComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperRepositoryComponent with ObjectMapperContextComponent with RepositoryComponent
 
 
-  val r = for {
+    val r = for {
 
-    id <- Components.workflow.init()
+      id <- Components.workflow.init()
 
-    result <- Components.workflow.execute(id)
+      result <- Components.workflow.execute(id)
 
-  } yield result
+    } yield result
 
 
-  println(r)
+    println(r)
 
 }
 

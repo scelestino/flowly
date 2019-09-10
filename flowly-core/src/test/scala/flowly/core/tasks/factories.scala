@@ -7,9 +7,9 @@ import flowly.core.tasks.basic.Task
 
 object BlockingTask {
 
-  def apply(_id: String, _next: Task, _condition: ReadableExecutionContext => Boolean, _allowedKeys: List[Key[_]]): basic.BlockingTask = new basic.BlockingTask {
+  def apply(_name: String, _next: Task, _condition: ReadableExecutionContext => Boolean, _allowedKeys: List[Key[_]]): basic.BlockingTask = new basic.BlockingTask {
 
-    override def id: String = _id
+    override def name: String = _name
 
     val next: Task = _next
 
@@ -23,9 +23,9 @@ object BlockingTask {
 
 object DisjunctionTask {
 
-  def apply(_id: String, _branches: (ReadableExecutionContext => Boolean, Task)*): basic.DisjunctionTask = new basic.DisjunctionTask {
+  def apply(_name: String, _branches: (ReadableExecutionContext => Boolean, Task)*): basic.DisjunctionTask = new basic.DisjunctionTask {
 
-    override def id: String = _id
+    override def name: String = _name
 
     override protected def customAllowedKeys = Nil
 
@@ -41,9 +41,9 @@ object DisjunctionTask {
 }
 
 object BlockingDisjunctionTask {
-  def apply(_id: String, _allowedKeys: List[Key[_]], _branches: (ReadableExecutionContext => Boolean, Task)*): basic.DisjunctionTask = new basic.DisjunctionTask {
+  def apply(_name: String, _allowedKeys: List[Key[_]], _branches: (ReadableExecutionContext => Boolean, Task)*): basic.DisjunctionTask = new basic.DisjunctionTask {
 
-    override def id: String = _id
+    override def name: String = _name
 
     override protected def customAllowedKeys = Nil
 
@@ -56,9 +56,9 @@ object BlockingDisjunctionTask {
 
 object ExecutionTask {
 
-  def apply(_id: String, _next: Task)(_perform: (String, WritableExecutionContext) => ErrorOr[WritableExecutionContext]): basic.ExecutionTask = new basic.ExecutionTask {
+  def apply(_name: String, _next: Task)(_perform: (String, WritableExecutionContext) => ErrorOr[WritableExecutionContext]): basic.ExecutionTask = new basic.ExecutionTask {
 
-    override def id: String = _id
+    override def name: String = _name
 
     val next: Task = _next
 

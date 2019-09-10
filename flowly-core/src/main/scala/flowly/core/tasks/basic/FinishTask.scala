@@ -10,9 +10,8 @@ import flowly.core.context.{ExecutionContext, Key}
   *
   * Once an execution reach this kind of [[Task]], the workflow instance where it is used will finish.
   *
-  * @param id task id
   */
-case class FinishTask(override val id: String) extends Task {
+case class FinishTask(override val name: String) extends Task {
 
   protected def customAllowedKeys: List[Key[_]] = Nil
 
