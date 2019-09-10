@@ -19,7 +19,7 @@ trait Retry extends Task with Dependencies {
     try {
       val attempts = executionContext.attempts.getOrElse(Attempts(1, Instant.now, None))
       super.execute(sessionId, executionContext) match {
-        case OnError(cause) if stoppingStrategy.shouldRetry(executionContext, attempts) =>
+        case OnError(cause:Retryable) if cause.canBeRetried && stoppingStrategy.shouldRetry(executionContext, attempts) =>
           ToRetry(cause, attempts.withNextRetry(schedulingStrategy.nextRetry(executionContext, attempts)))
         case
           otherwise => otherwise
@@ -34,4 +34,9 @@ trait Retry extends Task with Dependencies {
     */
   override private[flowly] def alternativeAfterAll():Unit = ()
 
+}
+
+trait Retryable {
+  this: Throwable =>
+  def canBeRetried:Boolean
 }

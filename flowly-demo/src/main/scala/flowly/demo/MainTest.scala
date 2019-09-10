@@ -28,11 +28,13 @@ import flowly.core.events.EventListener
 import flowly.core.repository.model.Attempts
 import flowly.core.repository.{InMemoryRepository, Repository}
 import flowly.core.tasks.basic._
-import flowly.core.tasks.compose.{Alternative, Retry}
+import flowly.core.tasks.compose.{Alternative, Retry, Retryable}
 import flowly.core.tasks.strategies.scheduling.SchedulingStrategy
 import flowly.core.tasks.strategies.stopping.StoppingStrategy
 import flowly.core.{DummyEventListener, Workflow}
 import flowly.mongodb.{CustomDateModule, MongoDBRepository}
+
+import scala.util.Try
 
 
 object MainTest extends App {
@@ -123,9 +125,14 @@ object MainTest extends App {
 
   trait FirstComponent {
     this: BlockingDisjunctionComponent =>
-    lazy val first: Task = new ExecutionTask {
+    lazy val first: Task = new ExecutionTask with Retry {
       val next: Task = blockingDisjunction
-      protected def perform(sessionId: String, executionContext: WritableExecutionContext) = Right(executionContext.set(Key1, "foo bar baz"))
+      protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
+//        Right(executionContext.set(Key1, "foo bar baz"))
+         Left(CustomError("todo mal"))
+      }
+      override protected def schedulingStrategy = Now
+      override protected def stoppingStrategy = Always
     }
   }
 
@@ -141,25 +148,17 @@ object MainTest extends App {
 
   object Components extends WorkflowComponent with FirstComponent with SecondComponent with ThirdComponent with DisjunctionComponent with BlockingDisjunctionComponent with BlockingComponent with Finish1Component with Finish2Component with ObjectMapperRepositoryComponent with ObjectMapperContextComponent with RepositoryComponent
 
-  val sessionId = Components.workflow.init().right.get
 
-  val r = Components.workflow.execute(sessionId)
+  val r = for {
+
+    id <- Components.workflow.init()
+
+    result <- Components.workflow.execute(id)
+
+  } yield result
+
+
   println(r)
-
-  val r2 = Components.workflow.execute(sessionId, Key5 -> 5)
-  println(r2)
-
-  val r3 = Components.workflow.execute(sessionId, Key3 -> true)
-  println(r3)
-
-  val r4 = Components.workflow.execute(sessionId)
-  println(r4)
-
-  val s = Components.repository.getById(sessionId)
-  println(s)
-
-  val toRetry = Components.repository.getToRetry
-  println(toRetry)
 
 }
 
@@ -177,4 +176,8 @@ object Always extends StoppingStrategy {
 
 object Now extends SchedulingStrategy {
   override def nextRetry(executionContext: ReadableExecutionContext, attempts: Attempts): Instant = Instant.now.plusSeconds(60)
+}
+
+case class CustomError(msg:String) extends RuntimeException(msg) with Retryable {
+  override def canBeRetried: Boolean = false
 }
