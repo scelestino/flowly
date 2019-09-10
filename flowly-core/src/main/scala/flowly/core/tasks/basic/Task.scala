@@ -1,8 +1,9 @@
 package flowly.core.tasks.basic
 
+import java.util.UUID
+
 import flowly.core.tasks.model.TaskResult
 import flowly.core.context.{ExecutionContext, Key}
-import flowly.core.{ErrorOr, Param, ParamsNotAllowed}
 
 /**
   * [[Task]] is something to do inside a workflow
@@ -12,8 +13,14 @@ import flowly.core.{ErrorOr, Param, ParamsNotAllowed}
   */
 trait Task {
 
-//  def id: String = this.getClass.getSimpleName
+  /**
+    * Unique ID
+    */
+  lazy val id:String = UUID.randomUUID().toString
 
+  /**
+    * Task Name (should be unique per workflow)
+    */
   def name:String = this.getClass.getSimpleName
 
   /**

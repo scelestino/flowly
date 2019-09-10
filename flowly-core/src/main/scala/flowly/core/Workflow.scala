@@ -217,10 +217,9 @@ trait Workflow {
     */
   private def tasks: List[Task] = {
     def tasks(currentTask: Task, accum: List[Task]): List[Task] = {
-      if (accum.contains(currentTask)) accum
+      if(accum.exists(_.id == currentTask.id)) accum
       else currentTask.followedBy.foldRight(currentTask :: accum)(tasks)
     }
-
     tasks(initialTask, Nil)
   }
 

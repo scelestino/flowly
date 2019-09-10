@@ -137,6 +137,7 @@ object MainTest extends App {
   trait FirstComponent {
     this: BlockingDisjunctionComponent =>
     lazy val first: Task = new ExecutionTask with Retry {
+
       val next: Task = blockingDisjunction
 
       protected def perform(sessionId: String, executionContext: WritableExecutionContext) = {
