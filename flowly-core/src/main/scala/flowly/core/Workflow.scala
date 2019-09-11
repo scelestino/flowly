@@ -24,6 +24,8 @@ import flowly.core.tasks.basic.Task
 import flowly.core.tasks.model._
 import flowly.core.context.{ExecutionContextFactory, Key}
 
+import scala.annotation.tailrec
+
 
 trait Workflow {
 

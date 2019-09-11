@@ -26,7 +26,7 @@ import flowly.core.context.{ExecutionContext, Key, WritableExecutionContext}
   */
 trait ExecutionTask extends Task {
 
-  val next: Task
+  def next: Task
 
   protected def customAllowedKeys: List[Key[_]] = Nil
 
