@@ -37,7 +37,8 @@ lazy val `flowly-mongodb` = project
 lazy val `flowly-demo` = project
     .settings(CommonSettings.settings: _*)
     .settings(
-      name := "flowly-demo"
+      name := "flowly-demo",
+      packagedArtifacts := Map.empty
     )
     .dependsOn(`flowly-core`, `flowly-mongodb`)
 
